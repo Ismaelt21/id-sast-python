@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pymongo
+python-dotenv
+networkx
+pydantic
+jinja2
+beautifulsoup4
+httpx

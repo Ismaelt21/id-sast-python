@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "id-sast-python"
+version = "0.1.0"
+description = "Independent Python microservice for SAST analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pymongo",
+    "python-dotenv",
+    "networkx",
+    "pydantic",
+    "jinja2",
+    "beautifulsoup4",
+    "httpx",
+]
+
+[project.scripts]
+id-sast-python = "cli.main:main"
+id-sast-python-api = "api.server:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["api*", "cli*", "config*", "core*", "database*", "reports*", "service*", "engine*"]
+namespaces = true
