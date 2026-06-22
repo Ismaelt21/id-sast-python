@@ -815,7 +815,10 @@ body {{
             vuln_type = self._esc(finding.get("vulnerability") or finding.get("vulnerability_type", "UNKNOWN"))
             description = self._esc(finding.get("description", "No description"))
             file_path = self._esc(finding.get("file", "unknown"))
-            line = self._esc(str(finding.get("line", "?")))
+            line_value = finding.get("line")
+            if line_value is None:
+                line_value = finding.get("sink_location")
+            line = self._esc(str(line_value if line_value is not None else "?"))
             source = self._esc(finding.get("source", "unknown"))
             sink = self._esc(finding.get("sink_label") or finding.get("sink", "unknown"))
             confidence = self._esc(str(finding.get("confidence", 0)))

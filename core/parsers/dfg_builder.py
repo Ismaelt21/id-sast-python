@@ -28,6 +28,12 @@ class DFGBuilder(ast.NodeVisitor):
         "os.system",
         "subprocess.run",
         "cursor.execute",
+        "open",
+        "send_file",
+        "send_from_directory",
+        "os.remove",
+        "os.unlink",
+        "pathlib.Path.unlink",
         "requests.get",
         "requests.post",
         "urllib.request.urlopen",
@@ -93,7 +99,20 @@ class DFGBuilder(ast.NodeVisitor):
             self._add_node(arg.arg, "source")
             self.variable_origins[arg.arg] = "tainted"
 
-        self.generic_visit(node)
+        for decorator in getattr(node, "decorator_list", []):
+            self.visit(decorator)
+
+        for stmt in getattr(node, "body", []):
+            self.visit(stmt)
+
+        if getattr(node, "returns", None):
+            self.visit(node.returns)
+
+    def visit_With(self, node):
+        self._visit_with_items(node)
+
+    def visit_AsyncWith(self, node):
+        self._visit_with_items(node)
 
     # =========================================================
     # ASSIGNMENTS
@@ -328,6 +347,15 @@ class DFGBuilder(ast.NodeVisitor):
             return self._resolve_attribute(node.func)
 
         return "unknown"
+
+    def _visit_with_items(self, node):
+        for item in getattr(node, "items", []):
+            self.visit(item.context_expr)
+            if item.optional_vars:
+                self.visit(item.optional_vars)
+
+        for stmt in getattr(node, "body", []):
+            self.visit(stmt)
 
     def _resolve_attribute(self, node):
 

@@ -298,6 +298,11 @@ BUILT_IN_RULES: Dict[str, BuiltInRule] = {
         ],
         sinks=[
             "open",
+            "send_file",
+            "send_from_directory",
+            "os.remove",
+            "os.unlink",
+            "pathlib.Path.unlink",
         ],
         sanitizers=[
             "secure_filename",

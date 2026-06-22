@@ -15,6 +15,12 @@ class TaintAnalyzer:
         "eval":             "CODE_INJECTION",
         "exec":             "CODE_INJECTION",
         "cursor.execute":   "SQL_INJECTION",
+        "open":             "PATH_TRAVERSAL",
+        "send_file":        "PATH_TRAVERSAL",
+        "send_from_directory": "PATH_TRAVERSAL",
+        "os.remove":        "PATH_TRAVERSAL",
+        "os.unlink":        "PATH_TRAVERSAL",
+        "pathlib.Path.unlink": "PATH_TRAVERSAL",
         "subprocess.run":   "COMMAND_INJECTION",
         "DANGEROUS_SINK":   "UNKNOWN_DANGEROUS_FLOW",
     }

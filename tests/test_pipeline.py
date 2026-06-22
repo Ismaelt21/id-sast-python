@@ -401,6 +401,38 @@ class TestSamplesCommandInjection:
 
 
 # =============================================================
+# SAMPLES — PATH TRAVERSAL
+# =============================================================
+
+@pytest.mark.skipif(
+    not (SAMPLES_DIR / "path_traversal").exists(),
+    reason="samples/vulnerable/path_traversal/ not found"
+)
+class TestSamplesPathTraversal:
+
+    def test_unsafe_open_detected(self):
+        code = _read(SAMPLES_DIR / "path_traversal" / "unsafe_open.py")
+        result = _run_pipeline(code)
+        assert len(result["taint_findings"]) > 0
+        assert _has_finding_with(result, "PATH_TRAVERSAL")
+
+    def test_path_traversal_findings_have_line(self):
+        code = _read(SAMPLES_DIR / "path_traversal" / "unsafe_open.py")
+        result = _run_pipeline(code)
+        assert any(
+            f.get("line") is not None or f.get("sink_location") is not None
+            for f in result["classified"]
+        )
+
+    def test_path_traversal_report_counts_are_typed(self):
+        code = _read(SAMPLES_DIR / "path_traversal" / "unsafe_open.py")
+        result = _run_pipeline(code)
+        assert result["report"]["statistics"]["vulnerabilities"].get(
+            "PATH_TRAVERSAL", 0
+        ) > 0
+
+
+# =============================================================
 # SAMPLES — SSRF
 # =============================================================
 

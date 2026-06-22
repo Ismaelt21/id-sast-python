@@ -171,6 +171,52 @@ SINKS: Dict[str, Sink] = {
         ]
     ),
 
+    "send_file": Sink(
+        name="send_file",
+        vulnerability="PATH_TRAVERSAL",
+        cwe="CWE-22",
+        severity="HIGH",
+        description="File sending without path restriction",
+        examples=[
+            "send_file(path)"
+        ],
+        aliases=[
+            "send_file",
+        ],
+        framework="flask"
+    ),
+
+    "send_from_directory": Sink(
+        name="send_from_directory",
+        vulnerability="PATH_TRAVERSAL",
+        cwe="CWE-22",
+        severity="HIGH",
+        description="Directory file sending",
+        examples=[
+            "send_from_directory(base, filename)"
+        ],
+        aliases=[
+            "send_from_directory",
+        ],
+        framework="flask"
+    ),
+
+    "os_remove": Sink(
+        name="os.remove",
+        vulnerability="PATH_TRAVERSAL",
+        cwe="CWE-22",
+        severity="HIGH",
+        description="File deletion using user-controlled path",
+        examples=[
+            "os.remove(path)"
+        ],
+        aliases=[
+            "os.remove",
+            "os.unlink",
+            "pathlib.Path.unlink",
+        ]
+    ),
+
     # =========================================================
     # SSRF
     # =========================================================

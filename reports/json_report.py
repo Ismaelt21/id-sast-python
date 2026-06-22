@@ -231,7 +231,14 @@ class JSONReport:
             severity = finding.get("severity", "LOW")
 
             # Corrección #10: clave correcta del pipeline.
-            vulnerability = finding.get("vulnerability", "UNKNOWN")
+            vulnerability = (
+                finding.get("vulnerability_type")
+                or finding.get("vulnerability")
+                or "UNKNOWN"
+            )
+            line = finding.get("line")
+            if line is None:
+                line = finding.get("sink_location")
 
             if severity in severity_counter:
                 severity_counter[severity] += 1
@@ -239,6 +246,9 @@ class JSONReport:
             vulnerability_counter[vulnerability] = (
                 vulnerability_counter.get(vulnerability, 0) + 1
             )
+
+            if line is not None:
+                finding.setdefault("line", line)
 
         return {
             "total_findings":  len(findings),
