@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 from config.settings import Settings
 from core.ai.rule_generator import RuleGenerator
 from core.analyzers.pattern_matcher import PatternMatcher
+from core.analyzers.hardcoded_secret_analyzer import HardcodedSecretAnalyzer
 from core.analyzers.semantic_analyzer import SemanticAnalyzer
 from core.analyzers.taint_analyzer import TaintAnalyzer
 from core.analyzers.vulnerability_classifier import VulnerabilityClassifier
@@ -44,6 +45,7 @@ class PySAST:
         self.normalizer = ASTNormalizer()
         self.cfg_builder = CFGBuilder()
         self.dfg_builder = DFGBuilder()
+        self.secret_analyzer = HardcodedSecretAnalyzer()
         self.semantic_analyzer = SemanticAnalyzer()
         self.vulnerability_classifier = VulnerabilityClassifier()
         self.rule_generator = RuleGenerator()
@@ -90,6 +92,11 @@ class PySAST:
                     "tainted_variables": [],
                 }
 
+                hardcoded_findings: List[Dict[str, Any]] = self.secret_analyzer.analyze(
+                    code,
+                    file_path,
+                )
+
                 taint_findings: List[Dict[str, Any]] = []
                 if Settings.ENABLE_TAINT_ANALYSIS and dfg_data["nodes"]:
                     taint_findings = TaintAnalyzer(dfg_data).analyze()
@@ -111,8 +118,8 @@ class PySAST:
                     ai_analysis_results.extend(semantic_results)
 
                 classified_findings: List[Dict[str, Any]] = []
-                for taint_finding in taint_findings:
-                    classified = self.vulnerability_classifier.classify(taint_finding).to_dict()
+                for raw_finding in hardcoded_findings + taint_findings:
+                    classified = self.vulnerability_classifier.classify(raw_finding).to_dict()
                     classified["file"] = file_path
                     classified_findings.append(classified)
 
@@ -214,4 +221,3 @@ class PySAST:
                 python_files.append(os.path.join(root, file))
 
         return python_files
-

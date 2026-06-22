@@ -563,6 +563,41 @@ class TestSamplesInsecureDeserialization:
 
 
 # =============================================================
+# SAMPLES — HARDCODED SECRETS
+# =============================================================
+
+@pytest.mark.skipif(
+    not (SAMPLES_DIR / "hardcoded_secrets").exists(),
+    reason="samples/vulnerable/hardcoded_secrets/ not found"
+)
+class TestSamplesHardcodedSecrets:
+
+    def test_api_keys_detected(self):
+        code = _read(SAMPLES_DIR / "hardcoded_secrets" / "api_keys.py")
+        result = _run_pipeline(code)
+        assert any(
+            f["vulnerability_type"] == "HARDCODED_SECRET"
+            for f in result["classified"]
+        )
+
+    def test_jwt_secrets_detected(self):
+        code = _read(SAMPLES_DIR / "hardcoded_secrets" / "jwt_secrets.py")
+        result = _run_pipeline(code)
+        assert any(
+            f["vulnerability_type"] == "HARDCODED_SECRET"
+            for f in result["classified"]
+        )
+
+    def test_passwords_detected(self):
+        code = _read(SAMPLES_DIR / "hardcoded_secrets" / "passwords.py")
+        result = _run_pipeline(code)
+        assert any(
+            f["vulnerability_type"] == "HARDCODED_SECRET"
+            for f in result["classified"]
+        )
+
+
+# =============================================================
 # PIPELINE PROPERTIES — INVARIANTES DEL SISTEMA
 # =============================================================
 
