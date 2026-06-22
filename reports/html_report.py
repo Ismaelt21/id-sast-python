@@ -62,11 +62,39 @@ class HTMLReport:
         risk_level = self._derive_risk_level(severity)
 
         project_name = self._esc(project.get("name", "Unknown project"))
+        project_path = self._esc(project.get("path", ""))
         total_files = self._esc(str(project.get("total_files", 0)))
         generated_at = self._esc(metadata.get("generated_at", _now_iso()))
         environment = self._esc(metadata.get("environment", "development"))
         version = self._esc(metadata.get("version", "unknown"))
         tool_name = self._esc(metadata.get("tool", "id-sast-python"))
+
+        methods_count = self._count_unique_finding_values(
+            findings,
+            ("method", "method_name", "function", "function_name", "callee"),
+        )
+        classes_count = self._count_unique_finding_values(
+            findings,
+            ("class", "class_name", "declaring_class", "type_name"),
+        )
+
+        false_positives_removed = int(
+            scan_summary.get(
+                "false_positives_removed",
+                stats.get("false_positives_removed", 0) or 0,
+            )
+        )
+        false_positive_rate = self._format_percentage(
+            false_positives_removed, total_findings
+        )
+
+        frameworks_detected = self._extract_frameworks(findings)
+        frameworks_text = self._esc(", ".join(frameworks_detected)) if frameworks_detected else "No disponible"
+        analysis_metrics = self._build_analysis_metrics(report_data, findings, graphs)
+        top_files_html = self._esc(self._build_top_files(findings))
+        top_types_html = self._esc(self._build_top_types(stats))
+        frameworks_detected_html = self._esc(self._build_frameworks_detected(findings, project))
+        duration_text = self._esc(self._format_duration(scan_summary))
 
         counts = {
             "AI": len(ai_analysis),
@@ -83,27 +111,27 @@ class HTMLReport:
         scan_id = self._esc(str(scan_summary.get("scan_id", report_data.get("scan_id", "N/A"))))
 
         return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{tool_name} Security Report</title>
 <style>
 :root {{
-    --bg: #0f172a;
-    --bg-soft: #111827;
-    --panel: #111827;
-    --panel-alt: #1f2937;
-    --line: rgba(255, 255, 255, 0.08);
-    --text: #e5e7eb;
-    --muted: #94a3b8;
-    --primary: #38bdf8;
+    --bg: #07111d;
+    --bg-soft: #0d1728;
+    --panel: rgba(14, 22, 38, 0.92);
+    --panel-alt: rgba(17, 27, 46, 0.98);
+    --line: rgba(159, 176, 204, 0.16);
+    --text: #edf4ff;
+    --muted: #a8b7cd;
+    --primary: #8be0ff;
     --critical: #ef4444;
     --high: #f97316;
-    --medium: #eab308;
+    --medium: #f59e0b;
     --low: #22c55e;
-    --chip: rgba(56, 189, 248, 0.12);
-    --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    --chip: rgba(139, 224, 255, 0.08);
+    --shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
 }}
 
 * {{
@@ -116,53 +144,57 @@ html {{
 
 body {{
     margin: 0;
-    font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
     background:
-        radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 32%),
-        radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 30%),
-        linear-gradient(180deg, #020617 0%, var(--bg) 100%);
+        radial-gradient(circle at top left, rgba(139, 224, 255, 0.16), transparent 30%),
+        radial-gradient(circle at top right, rgba(249, 115, 22, 0.10), transparent 28%),
+        linear-gradient(180deg, #0b1627 0%, var(--bg) 100%);
     color: var(--text);
 }}
 
 [data-theme="light"] {{
-    --bg: #f8fafc;
-    --bg-soft: #eef2ff;
-    --panel: #ffffff;
-    --panel-alt: #f8fafc;
-    --line: rgba(15, 23, 42, 0.08);
+    --bg: #eef4fb;
+    --bg-soft: #ffffff;
+    --panel: rgba(255, 255, 255, 0.92);
+    --panel-alt: rgba(255, 255, 255, 0.98);
+    --line: rgba(15, 23, 42, 0.10);
     --text: #0f172a;
-    --muted: #475569;
+    --muted: #516176;
     --chip: rgba(14, 165, 233, 0.10);
     --shadow: 0 18px 42px rgba(15, 23, 42, 0.10);
     background:
-        radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 30%),
-        radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 28%),
-        linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.10), transparent 30%),
+        radial-gradient(circle at top right, rgba(251, 146, 60, 0.08), transparent 28%),
+        linear-gradient(180deg, #f9fbff 0%, #edf3fb 42%, #f6f8fc 100%);
 }}
 
 .shell {{
-    width: min(1280px, calc(100% - 32px));
-    margin: 0 auto;
-    padding: 32px 0 48px;
+    width: min(1360px, calc(100% - 32px));
+    margin: 28px auto 64px;
+    padding: 0;
+    display: grid;
+    gap: 18px;
 }}
 
 .hero {{
     position: relative;
     overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 28px;
-    padding: 32px;
+    border-radius: 24px;
+    padding: 30px;
     background:
-        linear-gradient(145deg, rgba(17, 24, 39, 0.96), rgba(15, 23, 42, 0.84)),
-        linear-gradient(145deg, rgba(56, 189, 248, 0.14), transparent 40%);
-    box-shadow: var(--shadow);
-    margin-bottom: 24px;
+        linear-gradient(180deg, var(--panel-alt), var(--panel)),
+        linear-gradient(145deg, rgba(139, 224, 255, 0.08), transparent 40%);
+    box-shadow:
+        0 18px 42px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
 }}
 
 [data-theme="light"] .hero {{
     background:
-        linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92)),
-        linear-gradient(145deg, rgba(14, 165, 233, 0.08), transparent 38%);
+        linear-gradient(180deg, var(--panel-alt), var(--panel)),
+        linear-gradient(145deg, rgba(139, 224, 255, 0.06), transparent 38%);
 }}
 
 .eyebrow {{
@@ -228,7 +260,7 @@ body {{
 .metric-card,
 .risk-card {{
     border: 1px solid var(--line);
-    border-radius: 20px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.03);
     padding: 18px 18px 16px;
 }}
@@ -249,7 +281,7 @@ body {{
 
 .metric-card strong,
 .risk-card strong {{
-    font-size: 1.6rem;
+    font-size: 2rem;
     letter-spacing: -0.02em;
 }}
 
@@ -313,9 +345,12 @@ body {{
 .panel {{
     border: 1px solid var(--line);
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow: var(--shadow);
-    margin-bottom: 22px;
+    background: linear-gradient(180deg, var(--panel-alt), var(--panel));
+    box-shadow:
+        0 18px 42px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    margin-bottom: 0;
     overflow: hidden;
 }}
 
@@ -354,8 +389,8 @@ body {{
 
 .stat {{
     border: 1px solid var(--line);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
     padding: 16px;
 }}
 
@@ -437,10 +472,11 @@ body {{
     border-radius: 20px;
     background: rgba(255, 255, 255, 0.03);
     padding: 18px;
+    backdrop-filter: blur(10px);
 }}
 
 [data-theme="light"] .finding {{
-    background: rgba(248, 250, 252, 0.9);
+    background: rgba(248, 250, 252, 0.88);
 }}
 
 .finding__top {{
@@ -469,7 +505,7 @@ body {{
 
 .badge.critical {{ background: rgba(239, 68, 68, 0.16); color: #fecaca; }}
 .badge.high {{ background: rgba(249, 115, 22, 0.16); color: #fed7aa; }}
-.badge.medium {{ background: rgba(234, 179, 8, 0.16); color: #fde68a; }}
+.badge.medium {{ background: rgba(245, 158, 11, 0.16); color: #fde68a; }}
 .badge.low {{ background: rgba(34, 197, 94, 0.16); color: #bbf7d0; }}
 
 [data-theme="light"] .badge.critical {{ color: #b91c1c; }}
@@ -488,6 +524,7 @@ body {{
     border: 1px solid var(--line);
     border-radius: 16px;
     padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.02);
 }}
 
 .meta-item span {{
@@ -508,20 +545,111 @@ body {{
     line-height: 1.65;
 }}
 
+.finding__lede {{
+    margin: 8px 0 0;
+    color: var(--muted);
+    line-height: 1.55;
+}}
+
+.finding__summary {{
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--muted);
+    line-height: 1.55;
+}}
+
+.finding__meta--single {{
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}}
+
+.section-block {{
+    margin-top: 16px;
+}}
+
+.section-block h3 {{
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--primary);
+}}
+
+.section-block p {{
+    margin: 0;
+    color: var(--text);
+    line-height: 1.65;
+}}
+
+.section-card-grid {{
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}}
+
+.section-card {{
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.02);
+}}
+
+.section-card h3 {{
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--primary);
+}}
+
+.section-card p {{
+    margin: 0;
+    color: var(--text);
+    line-height: 1.55;
+}}
+
+.references-list {{
+    margin: 0;
+    padding-left: 20px;
+    color: var(--muted);
+    line-height: 1.6;
+}}
+
+.finding__meta-line {{
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 0.95rem;
+}}
+
+.summary-grid--csharp {{
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}}
+
+.summary-grid--metrics {{
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+}}
+
+.mini-grid--dense {{
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}}
+
 .code {{
     margin-top: 14px;
-    background: #020617;
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(10, 16, 32, 0.88);
+    border: 1px solid var(--line);
     border-radius: 16px;
     padding: 14px;
     overflow-x: auto;
     color: #e2e8f0;
-    font-family: Consolas, "Courier New", monospace;
+    font-family: Consolas, "SFMono-Regular", monospace;
     font-size: 0.9rem;
 }}
 
 [data-theme="light"] .code {{
-    background: #0f172a;
+    background: #f7fafc;
 }}
 
 .mini-grid {{
@@ -615,7 +743,10 @@ body {{
     .stats-grid,
     .mini-grid,
     .graph-grid,
-    .finding__meta {{
+    .finding__meta,
+    .summary-grid--csharp,
+    .summary-grid--metrics,
+    .section-card-grid {{
         grid-template-columns: 1fr;
     }}
 
@@ -631,7 +762,7 @@ body {{
     <section class="hero">
         <span class="eyebrow">id-sast-python</span>
         <h1>{project_name}</h1>
-        <p class="hero__subtitle">Static security report for Python sources, with API and CLI parity across the SAST suite.</p>
+        <p class="hero__subtitle">{project_path or 'Proyecto analizado'} · Reporte de seguridad estática para Python, con salida HTML y JSON alineada al microservicio independiente.</p>
 
         <div class="chip-row">
             <span class="chip">Tool: {tool_name}</span>
@@ -642,25 +773,25 @@ body {{
 
         <div class="hero-grid">
             <div class="risk-card risk-{risk_level.lower()}">
-                <span>Risk level</span>
+                <span>Nivel de riesgo</span>
                 <strong>{self._esc(risk_level)}</strong>
             </div>
             <div class="metric-card">
-                <span>Total findings</span>
+                <span>Total hallazgos</span>
                 <strong>{total_findings}</strong>
                 <small>{severity.get("CRITICAL", 0)} critical, {severity.get("HIGH", 0)} high</small>
             </div>
             <div class="metric-card">
-                <span>Files scanned</span>
+                <span>Archivos escaneados</span>
                 <strong>{total_files}</strong>
                 <small>Generated at {generated_at}</small>
             </div>
         </div>
 
         <div class="hero-footer">
-            <span>AI findings: {counts["AI"]}</span>
-            <span>Generated rules: {counts["Rules"]}</span>
-            <span>Matched rules: {counts["Matches"]}</span>
+            <span>Análisis IA: {counts["AI"]}</span>
+            <span>Reglas generadas: {counts["Rules"]}</span>
+            <span>Reglas coincidentes: {counts["Matches"]}</span>
         </div>
     </section>
 
@@ -672,36 +803,36 @@ body {{
     <section class="panel">
         <div class="panel__header">
             <div>
-                <h2>Executive Summary</h2>
-                <p>Quick view of the analysis scope and the severity distribution.</p>
+                <h2>Resumen ejecutivo</h2>
+                <p>Visión rápida del alcance, el riesgo y la reducción de falsos positivos.</p>
             </div>
         </div>
-        <div class="stats-grid">
-            <div class="stat"><span>Critical</span><strong>{severity["CRITICAL"]}</strong></div>
-            <div class="stat"><span>High</span><strong>{severity["HIGH"]}</strong></div>
-            <div class="stat"><span>Medium</span><strong>{severity["MEDIUM"]}</strong></div>
-            <div class="stat"><span>Low</span><strong>{severity["LOW"]}</strong></div>
-            <div class="stat"><span>Findings</span><strong>{total_findings}</strong></div>
-            <div class="stat"><span>Project</span><strong>{project_name}</strong></div>
+        <div class="stats-grid summary-grid--csharp">
+            <div class="stat"><span>Vulnerabilidades</span><strong>{total_findings}</strong></div>
+            <div class="stat"><span>Archivos</span><strong>{total_files}</strong></div>
+            <div class="stat"><span>Métodos</span><strong>{methods_count}</strong></div>
+            <div class="stat"><span>Clases</span><strong>{classes_count}</strong></div>
+            <div class="stat"><span>FP removidos</span><strong>{false_positives_removed}</strong><small>{false_positive_rate}</small></div>
+            <div class="stat"><span>Frameworks</span><strong>{frameworks_text}</strong></div>
         </div>
     </section>
 
     <section class="panel">
         <div class="panel__header">
             <div>
-                <h2>Findings</h2>
-                <p>Detailed vulnerabilities with source, sink, confidence and remediation hints.</p>
+                <h2>Hallazgos</h2>
+                <p>Filtra por severidad o busca texto dentro del reporte.</p>
             </div>
         </div>
         <div class="toolbar">
-            <input id="search-input" type="search" placeholder="Search findings, source, sink, vulnerability..." />
+            <input id="search-input" type="search" placeholder="Buscar hallazgos, fuente, sink o vulnerabilidad..." />
         </div>
         <div class="filter-row">
-            <button class="filter-chip active" data-filter="ALL" type="button">All</button>
-            <button class="filter-chip" data-filter="CRITICAL" type="button">Critical</button>
-            <button class="filter-chip" data-filter="HIGH" type="button">High</button>
-            <button class="filter-chip" data-filter="MEDIUM" type="button">Medium</button>
-            <button class="filter-chip" data-filter="LOW" type="button">Low</button>
+            <button class="filter-chip active" data-filter="ALL" type="button">Todos</button>
+            <button class="filter-chip" data-filter="CRITICAL" type="button">Críticas</button>
+            <button class="filter-chip" data-filter="HIGH" type="button">Altas</button>
+            <button class="filter-chip" data-filter="MEDIUM" type="button">Medias</button>
+            <button class="filter-chip" data-filter="LOW" type="button">Bajas</button>
         </div>
         <div class="finding-list" id="finding-list">
             {findings_html}
@@ -711,22 +842,42 @@ body {{
     <section class="panel">
         <div class="panel__header">
             <div>
-                <h2>AI Analysis</h2>
-                <p>Semantic validation results produced by the analysis pipeline.</p>
+                <h2>Métricas del análisis</h2>
+                <p>Indicadores de ejecución y cobertura del pipeline.</p>
             </div>
         </div>
-        <div class="mini-grid">
+        <div class="mini-grid mini-grid--dense">
             <div class="mini-kpi">
-                <span>Analyses</span>
-                <strong>{len(ai_analysis)}</strong>
+                <span>Archivos</span>
+                <strong>{analysis_metrics["files_scanned"]}</strong>
             </div>
             <div class="mini-kpi">
-                <span>Rules generated</span>
+                <span>Métodos</span>
+                <strong>{methods_count}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Nodos</span>
+                <strong>{analysis_metrics["nodes"]}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Sources</span>
+                <strong>{analysis_metrics["sources"]}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Sinks</span>
+                <strong>{analysis_metrics["sinks"]}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Sanitizers</span>
+                <strong>{analysis_metrics["sanitizers"]}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Taint paths</span>
+                <strong>{analysis_metrics["taint_paths"]}</strong>
+            </div>
+            <div class="mini-kpi">
+                <span>Reglas</span>
                 <strong>{len(generated_rules)}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Rules matched</span>
-                <strong>{len(matched_rules)}</strong>
             </div>
         </div>
         {ai_html}
@@ -735,20 +886,29 @@ body {{
     <section class="panel">
         <div class="panel__header">
             <div>
-                <h2>Generated Rules</h2>
-                <p>Reusable semantic rules inferred from the scan context.</p>
+                <h2>Contexto y remediación</h2>
+                <p>Arquitectura observada, archivos más afectados y sugerencias base.</p>
+            </div>
+        </div>
+        <div class="section-card-grid">
+            <div class="section-card">
+                <h3>Top archivos</h3>
+                <p>{top_files_html}</p>
+            </div>
+            <div class="section-card">
+                <h3>Top tipos</h3>
+                <p>{top_types_html}</p>
+            </div>
+            <div class="section-card">
+                <h3>Frameworks detectados</h3>
+                <p>{frameworks_detected_html}</p>
+            </div>
+            <div class="section-card">
+                <h3>Duración total</h3>
+                <p>{duration_text}</p>
             </div>
         </div>
         {rules_html}
-    </section>
-
-    <section class="panel">
-        <div class="panel__header">
-            <div>
-                <h2>Graph Overview</h2>
-                <p>Compact view of AST, CFG and DFG availability.</p>
-            </div>
-        </div>
         {graph_html}
     </section>
 
@@ -805,57 +965,349 @@ body {{
 </body>
 </html>"""
 
+    @staticmethod
+    def _count_unique_finding_values(findings: List[Dict], keys: tuple[str, ...]) -> int:
+        values = set()
+        for finding in findings:
+            for key in keys:
+                value = finding.get(key)
+                if value:
+                    values.add(str(value))
+                    break
+        return len(values)
+
+    @staticmethod
+    def _extract_frameworks(findings: List[Dict]) -> List[str]:
+        frameworks = []
+        for finding in findings:
+            framework = finding.get("framework") or finding.get("technology")
+            if framework:
+                frameworks.append(str(framework))
+        return sorted(set(frameworks))
+
+    def _build_analysis_metrics(self, report_data: Dict, findings: List[Dict], graphs: Dict) -> Dict[str, Any]:
+        scan_summary = report_data.get("scan_summary", {}) or {}
+        stats = report_data.get("statistics", {}) or {}
+
+        graph_nodes = 0
+        graph_taint_paths = 0
+        for graph in graphs.values():
+            if not graph:
+                continue
+            graph_nodes += int(graph.get("nodes", 0) or 0)
+            graph_taint_paths += int(graph.get("paths", 0) or 0)
+
+        sources = sum(1 for finding in findings if finding.get("source"))
+        sinks = sum(1 for finding in findings if finding.get("sink") or finding.get("sink_label"))
+        sanitizers = sum(1 for finding in findings if finding.get("sanitized") is True)
+
+        return {
+            "files_scanned": scan_summary.get(
+                "files_scanned",
+                len(report_data.get("project", {}).get("scanned_files", [])),
+            ),
+            "nodes": graph_nodes,
+            "sources": sources,
+            "sinks": sinks,
+            "sanitizers": sanitizers,
+            "taint_paths": graph_taint_paths or int(stats.get("total_findings", len(findings))),
+        }
+
+    @staticmethod
+    def _build_top_files(findings: List[Dict]) -> str:
+        counts: Dict[str, int] = {}
+        for finding in findings:
+            file_name = Path(str(finding.get("file", "unknown"))).name
+            counts[file_name] = counts.get(file_name, 0) + 1
+        if not counts:
+            return "No disponible"
+        items = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        return ", ".join(f"{name} ({count})" for name, count in items[:5])
+
+    @staticmethod
+    def _build_top_types(stats: Dict) -> str:
+        vulnerabilities = stats.get("vulnerabilities", {}) or {}
+        if not vulnerabilities:
+            return "No disponible"
+        items = sorted(vulnerabilities.items(), key=lambda item: (-int(item[1]), item[0]))
+        return ", ".join(f"{name} ({count})" for name, count in items[:5])
+
+    @staticmethod
+    def _build_frameworks_detected(findings: List[Dict], project: Dict) -> str:
+        frameworks = []
+        for finding in findings:
+            framework = finding.get("framework") or finding.get("technology")
+            if framework:
+                frameworks.append(str(framework))
+        if not frameworks and project.get("framework"):
+            frameworks.append(str(project.get("framework")))
+        if not frameworks:
+            return "No disponible"
+        return ", ".join(sorted(set(frameworks)))
+
+    @staticmethod
+    def _format_duration(scan_summary: Dict) -> str:
+        duration = scan_summary.get("duration_seconds")
+        if duration is None:
+            duration = scan_summary.get("duration")
+        if duration is None:
+            return "No disponible"
+        try:
+            value = float(duration)
+        except (TypeError, ValueError):
+            return str(duration)
+        return f"{value:.2f} s"
+
+    @staticmethod
+    def _format_percentage(part: int, total: int) -> str:
+        if total <= 0:
+            return "0.0%"
+        return f"{(part / total) * 100:.1f}%"
+
+    @staticmethod
+    def _confidence_band(confidence: float) -> str:
+        if confidence >= 0.85:
+            return "high"
+        if confidence >= 0.65:
+            return "medium"
+        return "low"
+
+    @staticmethod
+    def _finding_title(finding: Dict) -> str:
+        vuln_type = str(finding.get("vulnerability") or finding.get("vulnerability_type") or "UNKNOWN")
+        sink_label = str(finding.get("sink_label") or finding.get("sink") or "").strip()
+        source = str(finding.get("source") or "").strip()
+        titles = {
+            "SQL_INJECTION": "SQL Injection",
+            "COMMAND_INJECTION": "Command Injection",
+            "CODE_INJECTION": "Code Injection",
+            "XSS": "XSS",
+            "PATH_TRAVERSAL": "Path Traversal",
+            "SSRF": "SSRF",
+            "INSECURE_DESERIALIZATION": "Insecure Deserialization",
+            "HARDCODED_SECRET": "Hardcoded Secret",
+        }
+        base = titles.get(vuln_type, vuln_type.replace("_", " ").title())
+        if vuln_type == "SQL_INJECTION" and sink_label:
+            return f"{base} — flujo hacia {sink_label}"
+        if vuln_type == "XSS" and sink_label:
+            return f"{base} — salida no confiable hacia {sink_label}"
+        if vuln_type == "PATH_TRAVERSAL" and source:
+            return f"{base} — acceso desde {source}"
+        if vuln_type == "SSRF" and sink_label:
+            return f"{base} — solicitud a {sink_label}"
+        if vuln_type == "HARDCODED_SECRET":
+            return f"{base} — secreto expuesto en código"
+        return base
+
+    @staticmethod
+    def _cwe_text(cwe_id: str, vuln_type: str) -> str:
+        descriptions = {
+            "CWE-89": "Improper Neutralization of Special Elements used in an SQL Command",
+            "CWE-79": "Improper Neutralization of Input During Web Page Generation",
+            "CWE-22": "Improper Limitation of a Pathname to a Restricted Directory",
+            "CWE-78": "Improper Neutralization of Special Elements used in an OS Command",
+            "CWE-94": "Improper Control of Generation of Code",
+            "CWE-502": "Deserialization of Untrusted Data",
+            "CWE-798": "Use of Hard-coded Credentials",
+            "CWE-918": "Server-Side Request Forgery",
+        }
+        cwe = cwe_id or "CWE-0"
+        return f"{cwe} {descriptions.get(cwe, vuln_type.replace('_', ' ').title())}"
+
+    @staticmethod
+    def _reference_links(vuln_type: str, cwe_id: str) -> List[tuple[str, str]]:
+        mapping = {
+            "SQL_INJECTION": [
+                ("OWASP SQL Injection", "https://owasp.org/www-community/attacks/SQL_Injection"),
+                ("Cheat Sheet", "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"),
+            ],
+            "XSS": [
+                ("OWASP XSS", "https://owasp.org/www-community/attacks/xss/"),
+            ],
+            "PATH_TRAVERSAL": [
+                ("OWASP Path Traversal", "https://owasp.org/www-community/attacks/Path_Traversal"),
+            ],
+            "SSRF": [
+                ("OWASP SSRF", "https://owasp.org/www-community/attacks/Server_Side_Request_Forgery"),
+            ],
+            "COMMAND_INJECTION": [
+                ("OWASP Command Injection", "https://owasp.org/www-community/attacks/Command_Injection"),
+            ],
+            "HARDCODED_SECRET": [
+                ("OWASP Secrets Management", "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"),
+            ],
+            "INSECURE_DESERIALIZATION": [
+                ("OWASP Deserialization", "https://owasp.org/www-community/vulnerabilities/Deserialization_of_untrusted_data"),
+            ],
+        }
+        if vuln_type in mapping:
+            return mapping[vuln_type]
+        if cwe_id == "CWE-89":
+            return mapping["SQL_INJECTION"]
+        return []
+
+    @staticmethod
+    def _extract_method_label(finding: Dict) -> str:
+        for key in ("method", "method_name", "function", "function_name", "callee"):
+            value = finding.get(key)
+            if value:
+                return str(value)
+        return "No disponible"
+
+    @staticmethod
+    def _extract_framework_label(finding: Dict) -> str:
+        value = finding.get("framework") or finding.get("technology")
+        if value:
+            return str(value)
+        return "No disponible"
+
+    @staticmethod
+    def _finding_line_range(finding: Dict) -> tuple[Any, Any]:
+        start = finding.get("source_location")
+        end = finding.get("sink_location") or finding.get("line")
+        if start is None and end is None:
+            end = finding.get("line")
+        if start is None:
+            start = end
+        if end is None:
+            end = start
+        return start, end
+
+    @staticmethod
+    def _format_line_range(start: Any, end: Any) -> str:
+        if start is None and end is None:
+            return "No disponible"
+        if start == end or end is None:
+            return f"L{start}"
+        return f"L{start} → L{end}"
+
+    @staticmethod
+    def _format_location(value: Any) -> str:
+        if value in (None, "", 0):
+            return ""
+        return f"L{value}"
+
     def _build_findings(self, findings: List[Dict]) -> str:
         if not findings:
-            return '<div class="empty">No vulnerabilities detected.</div>'
+            return '<div class="empty">No se detectaron vulnerabilidades.</div>'
 
         blocks: List[str] = []
         for idx, finding in enumerate(findings, start=1):
             severity = self._normalize_severity_label(finding.get("severity", "LOW"))
-            vuln_type = self._esc(finding.get("vulnerability") or finding.get("vulnerability_type", "UNKNOWN"))
+            vuln_type = str(finding.get("vulnerability") or finding.get("vulnerability_type", "UNKNOWN"))
+            vuln_label = self._esc(vuln_type)
+            cwe_id = str(finding.get("cwe_id") or finding.get("cwe") or "CWE-0")
+            cwe_text = self._esc(self._cwe_text(cwe_id, vuln_type))
             description = self._esc(finding.get("description", "No description"))
-            file_path = self._esc(finding.get("file", "unknown"))
-            line_value = finding.get("line")
-            if line_value is None:
-                line_value = finding.get("sink_location")
-            line = self._esc(str(line_value if line_value is not None else "?"))
+            short_title = self._esc(self._finding_title(finding))
+            file_name = self._esc(Path(str(finding.get("file", "unknown"))).name)
+            start_line, end_line = self._finding_line_range(finding)
+            line_label = self._esc(self._format_line_range(start_line, end_line))
             source = self._esc(finding.get("source", "unknown"))
             sink = self._esc(finding.get("sink_label") or finding.get("sink", "unknown"))
-            confidence = self._esc(str(finding.get("confidence", 0)))
-            cwe = self._esc(finding.get("cwe_id") or finding.get("cwe") or "")
-            recommendation = self._esc(finding.get("recommendation", ""))
+            confidence = float(finding.get("confidence", 0) or 0)
+            confidence_label = self._confidence_band(confidence)
+            confidence_text = self._esc(f"{confidence:.2f}")
+            risk_label = self._esc(confidence_label.lower())
+            analysis_type = self._esc(
+                finding.get("analysis_type")
+                or finding.get("metadata", {}).get("analysis_type")
+                or "taint_analysis"
+            )
+            method = self._esc(self._extract_method_label(finding))
+            framework = self._esc(self._extract_framework_label(finding))
+            vuln_id = self._esc(
+                finding.get("vuln_id")
+                or finding.get("finding_id")
+                or finding.get("id")
+                or "No disponible"
+            )
             code_snippet = finding.get("code_snippet", "")
             code_context = finding.get("code_context", []) or []
             path = finding.get("path") or finding.get("taint_path") or []
             path_html = self._esc(" -> ".join(map(str, path))) if path else ""
             code_html = self._render_code_context(code_context, code_snippet)
+            references = self._reference_links(vuln_type, cwe_id)
+            references_html = ""
+            if references:
+                references_html = "<ul class=\"references-list\">" + "".join(
+                    f"<li><a href=\"{self._esc(url)}\" target=\"_blank\" rel=\"noopener noreferrer\">{self._esc(label)}</a></li>"
+                    for label, url in references
+                ) + "</ul>"
+
+            source_location = self._format_location(finding.get("source_location"))
+            sink_location = self._format_location(finding.get("sink_location") or finding.get("line"))
+            context_summary = finding.get("context") or (
+                f"Flujo de datos desde {source} hacia {sink}."
+                if source != "unknown" or sink != "unknown"
+                else "No hay contexto adicional disponible."
+            )
+            context_summary = self._esc(context_summary)
+            recommendation = self._esc(finding.get("recommendation", ""))
+            source_block = self._esc(
+                f"{source} {source_location}".strip()
+                if source_location
+                else source
+            )
+            sink_block = self._esc(
+                f"{sink} {sink_location}".strip()
+                if sink_location
+                else sink
+            )
 
             blocks.append(
                 f"""
 <article class="finding" data-finding-card data-severity="{severity}">
     <div class="finding__top">
         <div>
-            <p class="finding__title">#{idx} {vuln_type}</p>
-            <p class="finding__desc">{description}</p>
+            <p class="finding__title">#{idx} {short_title}</p>
+            <p class="finding__desc">{vuln_label} · {cwe_text}</p>
+            <p class="finding__meta-line">{severity} {confidence_label.lower()} {analysis_type}</p>
         </div>
         <span class="badge {severity.lower()}">{severity}</span>
     </div>
 
-    <div class="finding__meta">
-        <div class="meta-item"><span>File</span><strong>{file_path}</strong></div>
-        <div class="meta-item"><span>Line</span><strong>{line}</strong></div>
-        <div class="meta-item"><span>Confidence</span><strong>{confidence}</strong></div>
+    <div class="finding__summary">
+        Archivo: {file_name} &nbsp; Líneas: {line_label} &nbsp; Método: {method} &nbsp; Framework: {framework} &nbsp; Vuln ID: {vuln_id}
     </div>
 
-    <div class="finding__meta">
-        <div class="meta-item"><span>Source</span><strong>{source}</strong></div>
-        <div class="meta-item"><span>Sink</span><strong>{sink}</strong></div>
-        <div class="meta-item"><span>CWE</span><strong>{cwe or 'N/A'}</strong></div>
+    <div class="section-block">
+        <h3>Descripción</h3>
+        <p>{description}</p>
     </div>
 
-    {f'<p class="finding__desc"><strong>Taint path:</strong> {path_html}</p>' if path_html else ''}
-    {f'<p class="finding__desc"><strong>Recommendation:</strong> {recommendation}</p>' if recommendation else ''}
-    {code_html}
+    <div class="section-block">
+        <h3>Contexto</h3>
+        <p>{context_summary}</p>
+        {f'<p class="finding__lede"><strong>Path de taint:</strong> {path_html}</p>' if path_html else ''}
+    </div>
+
+    <div class="section-block">
+        <h3>Contexto de código</h3>
+        {code_html if code_html else '<div class="empty">Sin snippet disponible.</div>'}
+    </div>
+
+    <div class="section-card-grid">
+        <div class="section-card">
+            <h3>Fuente</h3>
+            <p>{source_block}</p>
+        </div>
+        <div class="section-card">
+            <h3>Sink</h3>
+            <p>{sink_block}</p>
+        </div>
+    </div>
+
+    <div class="section-block">
+        <h3>Remediación</h3>
+        <p>{recommendation or 'No disponible'}</p>
+    </div>
+
+    <div class="section-block">
+        <h3>Referencias</h3>
+        {references_html if references_html else '<p>No disponible</p>'}
+    </div>
 </article>"""
             )
 
@@ -863,7 +1315,7 @@ body {{
 
     def _build_ai_analysis(self, ai_analysis: List[Dict]) -> str:
         if not ai_analysis:
-            return '<div class="empty">No AI analysis generated for this scan.</div>'
+            return '<div class="empty">No se generó análisis IA para este escaneo.</div>'
 
         blocks: List[str] = []
         for idx, item in enumerate(ai_analysis, start=1):
@@ -895,7 +1347,7 @@ body {{
 
     def _build_rules(self, generated_rules: List[Dict]) -> str:
         if not generated_rules:
-            return '<div class="empty">No generated rules in this scan.</div>'
+            return '<div class="empty">No se generaron reglas en este escaneo.</div>'
 
         blocks: List[str] = []
         for idx, rule in enumerate(generated_rules, start=1):
@@ -921,7 +1373,7 @@ body {{
 
     def _build_graphs(self, graphs: Dict) -> str:
         if not graphs:
-            return '<div class="empty">No graph summary available.</div>'
+            return '<div class="empty">No hay resumen de grafos disponible.</div>'
 
         cards = []
         for graph_name in ("ast", "cfg", "dfg"):
@@ -989,7 +1441,7 @@ body {{
 <head><meta charset="UTF-8"><title>id-sast-python Minimal Report</title></head>
 <body>
 <h1>id-sast-python Minimal Report</h1>
-<p>Total Findings: {total}</p>
+<p>Total hallazgos: {total}</p>
 </body>
 </html>"""
 

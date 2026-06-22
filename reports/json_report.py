@@ -17,6 +17,7 @@ Solo serializa resultados.
 """
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -70,6 +71,13 @@ class JSONReport:
         matched_rules   = matched_rules   or []
         enriched_findings = self._enrich_findings(findings)
 
+        project_root = ""
+        if scanned_files:
+            try:
+                project_root = os.path.commonpath(scanned_files)
+            except ValueError:
+                project_root = ""
+
         # Corrección #14: intentamos importar settings con
         # fallback seguro.
         try:
@@ -89,6 +97,7 @@ class JSONReport:
             },
             "project": {
                 "name":          project_name,
+                "path":          project_root,
                 "scanned_files": scanned_files,
                 "total_files":   len(scanned_files),
             },
