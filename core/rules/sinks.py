@@ -312,6 +312,21 @@ SINKS: Dict[str, Sink] = {
         framework="flask"
     ),
 
+    "flask_make_response": Sink(
+        name="make_response",
+        vulnerability="XSS",
+        cwe="CWE-79",
+        severity="HIGH",
+        description="HTML response built from user-controlled data",
+        examples=[
+            "make_response(f'<p>{user}</p>')"
+        ],
+        aliases=[
+            "make_response",
+        ],
+        framework="flask"
+    ),
+
     # =========================================================
     # DESERIALIZATION
     # =========================================================

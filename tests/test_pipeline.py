@@ -459,6 +459,47 @@ class TestSamplesSSRF:
 
 
 # =============================================================
+# SAMPLES — XSS
+# =============================================================
+
+@pytest.mark.skipif(
+    not (SAMPLES_DIR / "xss").exists(),
+    reason="samples/vulnerable/xss/ not found"
+)
+class TestSamplesXSS:
+
+    def test_flask_render_detected(self):
+        code = _read(SAMPLES_DIR / "xss" / "flask_render.py")
+        result = _run_pipeline(code)
+        assert _has_finding_with(result, "XSS")
+
+    def test_jinja_unsafe_detected(self):
+        code = _read(SAMPLES_DIR / "xss" / "jinja_unsafe.py")
+        result = _run_pipeline(code)
+        assert _has_finding_with(result, "XSS")
+
+    def test_reflected_xss_detected(self):
+        code = _read(SAMPLES_DIR / "xss" / "reflected_xss.py")
+        result = _run_pipeline(code)
+        assert _has_finding_with(result, "XSS")
+
+    def test_xss_findings_are_deduplicated_per_sink_line(self):
+        code = _read(SAMPLES_DIR / "xss" / "flask_render.py")
+        result = _run_pipeline(code)
+        keys = [
+            (
+                f.get("file"),
+                f.get("vulnerability_type"),
+                f.get("sink_label"),
+                f.get("line"),
+            )
+            for f in result["classified"]
+            if f.get("vulnerability_type") == "XSS"
+        ]
+        assert len(keys) == len(set(keys))
+
+
+# =============================================================
 # SAMPLES — UNSAFE EVAL / CODE INJECTION
 # =============================================================
 

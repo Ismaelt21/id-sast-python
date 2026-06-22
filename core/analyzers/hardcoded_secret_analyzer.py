@@ -370,6 +370,11 @@ class HardcodedSecretAnalyzer:
 
         lower = value.lower()
 
+        # Evitamos confundir plantillas HTML normales con secretos.
+        if re.search(r"</?[a-zA-Z][^>]*>", value):
+            if not self.SECRET_LITERAL_PATTERN.search(value) and "@" not in value:
+                return False
+
         if re.match(r"^https?://", lower):
             authority = value.split("://", 1)[1].split("/", 1)[0]
             if "@" not in authority:

@@ -100,6 +100,7 @@ class PySAST:
                 taint_findings: List[Dict[str, Any]] = []
                 if Settings.ENABLE_TAINT_ANALYSIS and dfg_data["nodes"]:
                     taint_findings = TaintAnalyzer(dfg_data).analyze()
+                    taint_findings = self._deduplicate_findings(taint_findings)
 
                 matched_rules: Dict[str, Any] = {"matches": [], "unknown_patterns": []}
                 if taint_findings:
@@ -118,7 +119,9 @@ class PySAST:
                     ai_analysis_results.extend(semantic_results)
 
                 classified_findings: List[Dict[str, Any]] = []
-                for raw_finding in hardcoded_findings + taint_findings:
+                for raw_finding in self._deduplicate_findings(
+                    hardcoded_findings + taint_findings
+                ):
                     classified = self.vulnerability_classifier.classify(raw_finding).to_dict()
                     classified["file"] = file_path
                     classified_findings.append(classified)
@@ -221,3 +224,44 @@ class PySAST:
                 python_files.append(os.path.join(root, file))
 
         return python_files
+
+    @staticmethod
+    def _deduplicate_findings(findings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Reduce duplicate findings that point to the same sink
+        in the same line/file.
+
+        We keep the highest-confidence finding for each key so
+        the report stays readable while preserving the strongest
+        signal.
+        """
+
+        best_by_key: Dict[tuple, Dict[str, Any]] = {}
+
+        for finding in findings:
+            key = (
+                finding.get("file"),
+                finding.get("vulnerability") or finding.get("vulnerability_type"),
+                finding.get("sink_label") or finding.get("sink"),
+                finding.get("line") or finding.get("sink_location"),
+            )
+
+            existing = best_by_key.get(key)
+            if existing is None:
+                best_by_key[key] = finding
+                continue
+
+            current_score = float(finding.get("confidence", 0.0) or 0.0)
+            existing_score = float(existing.get("confidence", 0.0) or 0.0)
+
+            if current_score > existing_score:
+                best_by_key[key] = finding
+
+        return sorted(
+            best_by_key.values(),
+            key=lambda item: (
+                str(item.get("file", "")),
+                int(item.get("line") or item.get("sink_location") or 0),
+                str(item.get("sink_label") or item.get("sink") or ""),
+            ),
+        )

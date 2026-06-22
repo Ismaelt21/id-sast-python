@@ -39,6 +39,8 @@ class DFGBuilder(ast.NodeVisitor):
         "urllib.request.urlopen",
         "urllib.request.urlretrieve",
         "http.client.HTTPConnection",
+        "render_template_string",
+        "make_response",
         "DANGEROUS_SINK",
     }
 
@@ -211,7 +213,7 @@ class DFGBuilder(ast.NodeVisitor):
         # dentro del BinOp, no sólo ast.Name.
         # -------------------------------------------------
 
-        elif isinstance(value, ast.BinOp):
+        elif isinstance(value, (ast.BinOp, ast.JoinedStr)):
 
             variables_used = self._extract_variables(value)
 
