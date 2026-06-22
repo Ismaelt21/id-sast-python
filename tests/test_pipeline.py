@@ -29,6 +29,7 @@ from core.analyzers.pattern_matcher       import PatternMatcher
 from core.analyzers.semantic_analyzer     import SemanticAnalyzer
 from core.analyzers.vulnerability_classifier import VulnerabilityClassifier
 from core.rules.built_in_rules            import get_all_rules
+from reports.json_report                   import JSONReport
 
 
 # =============================================================
@@ -497,6 +498,36 @@ class TestSamplesXSS:
             if f.get("vulnerability_type") == "XSS"
         ]
         assert len(keys) == len(set(keys))
+
+    def test_json_report_includes_code_context(self, tmp_path):
+        file_path = SAMPLES_DIR / "xss" / "flask_render.py"
+        report = JSONReport(output_dir=tmp_path).generate(
+            project_name="xss",
+            scanned_files=[str(file_path)],
+            findings=[
+                {
+                    "vulnerability_type": "XSS",
+                    "severity": "HIGH",
+                    "confidence": 0.75,
+                    "source": "request.args.get",
+                    "sink": "render_template_string@69",
+                    "sink_label": "render_template_string",
+                    "line": 69,
+                    "file": str(file_path),
+                    "taint_path": [
+                        "request.args.get",
+                        "url",
+                        "render_template_string@69",
+                    ],
+                    "description": "Detected XSS vulnerability.",
+                    "recommendation": "Sanitize and escape user-controlled output.",
+                }
+            ],
+        )
+        finding = report["findings"][0]
+        assert finding["code_snippet"]
+        assert finding["code_context"]
+        assert finding["start_line"] <= finding["line"] <= finding["end_line"]
 
 
 # =============================================================

@@ -824,9 +824,11 @@ body {{
             confidence = self._esc(str(finding.get("confidence", 0)))
             cwe = self._esc(finding.get("cwe_id") or finding.get("cwe") or "")
             recommendation = self._esc(finding.get("recommendation", ""))
-            code = self._esc(finding.get("code", ""))
+            code_snippet = finding.get("code_snippet", "")
+            code_context = finding.get("code_context", []) or []
             path = finding.get("path") or finding.get("taint_path") or []
             path_html = self._esc(" -> ".join(map(str, path))) if path else ""
+            code_html = self._render_code_context(code_context, code_snippet)
 
             blocks.append(
                 f"""
@@ -853,7 +855,7 @@ body {{
 
     {f'<p class="finding__desc"><strong>Taint path:</strong> {path_html}</p>' if path_html else ''}
     {f'<p class="finding__desc"><strong>Recommendation:</strong> {recommendation}</p>' if recommendation else ''}
-    {f'<pre class="code">{code}</pre>' if code else ''}
+    {code_html}
 </article>"""
             )
 
@@ -934,6 +936,21 @@ body {{
             )
 
         return f'<div class="graph-grid">{"".join(cards)}</div>'
+
+    def _render_code_context(self, code_context: List[Dict], code_snippet: str) -> str:
+        if code_context:
+            lines = []
+            for item in code_context:
+                line_number = self._esc(item.get("line_number", "?"))
+                content = self._esc(item.get("content", ""))
+                marker = ">>" if item.get("is_target") else "  "
+                lines.append(f"{marker} {line_number:>4} | {content}")
+            return f'<pre class="code">{"\n".join(lines)}</pre>'
+
+        if code_snippet:
+            return f'<pre class="code">{self._esc(code_snippet)}</pre>'
+
+        return ""
 
     @staticmethod
     def _normalize_severity(severity: Dict[str, int]) -> Dict[str, int]:

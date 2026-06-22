@@ -68,6 +68,7 @@ class JSONReport:
         ai_analysis     = ai_analysis     or []
         generated_rules = generated_rules or []
         matched_rules   = matched_rules   or []
+        enriched_findings = self._enrich_findings(findings)
 
         # Corrección #14: intentamos importar settings con
         # fallback seguro.
@@ -91,8 +92,8 @@ class JSONReport:
                 "scanned_files": scanned_files,
                 "total_files":   len(scanned_files),
             },
-            "statistics": self._build_statistics(findings),
-            "findings":         findings,
+            "statistics": self._build_statistics(enriched_findings),
+            "findings":         enriched_findings,
             "ai_analysis":      ai_analysis,
             "generated_rules":  generated_rules,
             "matched_rules":    matched_rules,
@@ -273,6 +274,86 @@ class JSONReport:
             "nodes":     len(graph_data.get("nodes", [])),
             "edges":     len(graph_data.get("edges", [])),
         }
+
+    # =========================================================
+    # FINDING ENRICHMENT
+    # =========================================================
+
+    def _enrich_findings(self, findings: List[Dict]) -> List[Dict]:
+        """
+        Normaliza cada finding y agrega contexto de código.
+
+        El JSON pasa a ser la fuente canónica para el HTML:
+        - line
+        - start_line
+        - end_line
+        - code_snippet
+        - code_context
+        """
+
+        enriched: List[Dict] = []
+        for finding in findings:
+            item = dict(finding)
+            line = item.get("line")
+            if line is None:
+                line = item.get("sink_location")
+            if line is not None:
+                item["line"] = line
+
+            code_context = self._build_code_context(item)
+            if code_context:
+                item["code_context"] = code_context
+                item["start_line"] = code_context[0]["line_number"]
+                item["end_line"] = code_context[-1]["line_number"]
+                item["code_snippet"] = "\n".join(
+                    f"{line_item['line_number']:>4} | {line_item['content']}"
+                    for line_item in code_context
+                )
+            else:
+                item.setdefault("start_line", line)
+                item.setdefault("end_line", line)
+                item.setdefault("code_snippet", "")
+                item.setdefault("code_context", [])
+
+            enriched.append(item)
+
+        return enriched
+
+    def _build_code_context(self, finding: Dict) -> List[Dict[str, Any]]:
+        file_path = finding.get("file")
+        line = finding.get("line")
+
+        if not file_path or line is None:
+            return []
+
+        try:
+            source = Path(file_path).read_text(encoding="utf-8")
+        except OSError:
+            return []
+
+        lines = source.splitlines()
+        if not lines:
+            return []
+
+        try:
+            line_no = int(line)
+        except (TypeError, ValueError):
+            return []
+
+        start = max(1, line_no - 2)
+        end = min(len(lines), line_no + 2)
+
+        context: List[Dict[str, Any]] = []
+        for current in range(start, end + 1):
+            context.append(
+                {
+                    "line_number": current,
+                    "content": lines[current - 1],
+                    "is_target": current == line_no,
+                }
+            )
+
+        return context
 
     # =========================================================
     # EXPORT AI DATASET
