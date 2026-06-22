@@ -21,8 +21,9 @@ que:
 - analiza codigo fuente Python de forma estatica;
 - organiza el resultado por hallazgos, estadisticas y metadatos del escaneo;
 - genera salidas en JSON, HTML y consola;
-- opcionalmente persiste resultados en MongoDB Atlas;
-- expone la misma funcionalidad por API y por CLI.
+- opcionalmente persiste resultados en MongoDB Atlas con configuracion propia;
+- expone la misma funcionalidad por API y por CLI;
+- mantiene compatibilidad con Docker y con ejecucion local.
 
 ## Alcance tecnico
 
@@ -91,6 +92,13 @@ id-sast-python
 id-sast-python-api
 ```
 
+Si tambien deseas ejecutar pruebas locales, instala `pytest` en el entorno de
+desarrollo:
+
+```powershell
+python -m pip install pytest
+```
+
 ### Nota sobre `requirements.txt`
 
 El archivo `requirements.txt` se conserva como referencia de compatibilidad, pero
@@ -136,6 +144,7 @@ TEMP_DIR=storage/temp
 - Si `USE_PERSISTENCE=false`, el motor puede ejecutarse sin escribir en MongoDB.
 - Si `USE_GEMINI=false` o `ENABLE_AI_ANALYSIS=false`, el analisis se ejecuta sin
   asistencia de IA.
+- `config/settings.py` es la fuente de verdad para cargar la configuracion.
 
 ## Ejecucion local
 
@@ -144,6 +153,7 @@ TEMP_DIR=storage/temp
 ```powershell
 id-sast-python scan .\samples\vulnerable\unsafe_eval --no-persist --html-only
 id-sast-python scan .\samples\vulnerable\sqli --no-ai --json-only
+id-sast-python scan .\samples\vulnerable\xss --no-persist --html-only
 ```
 
 ### API
@@ -166,7 +176,8 @@ Se utilizan colecciones separadas para:
 - reglas de seguridad.
 
 Esto permite mantener el aislamiento por microservicio y evitar una base
-compartida entre motores de distinto lenguaje.
+compartida entre motores de distinto lenguaje. La configuracion de Python es
+independiente de la de C#.
 
 ## Docker
 
@@ -196,6 +207,9 @@ El motor puede producir salidas en:
 Los reportes HTML se generan en `reports/output/` y estan pensados para reflejar
 la misma identidad visual del componente C#.
 
+El reporte incluye hallazgos, severidad, confianza, CWE, linea, ruta de taint,
+resumen estadistico y, cuando aplica, trazas de analisis semantico e IA.
+
 ## Validacion
 
 Para comprobar el funcionamiento del servicio, los pasos recomendados son:
@@ -203,6 +217,8 @@ Para comprobar el funcionamiento del servicio, los pasos recomendados son:
 ```powershell
 python -m pytest
 id-sast-python scan .\samples\vulnerable\unsafe_eval --no-persist --html-only
+id-sast-python scan .\samples\vulnerable\hardcoded_secrets --no-persist --html-only
+id-sast-python scan .\samples\vulnerable\xss --no-persist --html-only
 ```
 
 Como verificacion adicional, puede ejecutarse un escaneo real sobre alguno de
@@ -214,3 +230,12 @@ El motor principal de analisis vive en `engine/pysast.py`. El archivo `main.py`
 se conserva como wrapper de compatibilidad para no romper escenarios previos,
 mientras la ejecucion oficial del servicio se centraliza en los entrypoints del
 paquete.
+
+## Observaciones de implementacion
+
+- `main.py` ya no es el punto principal de ejecucion; funciona como envoltura
+  de compatibilidad.
+- La deteccion de `XSS` y `HARDCODED_SECRET` fue ajustada para reducir
+  duplicados y falsos positivos.
+- El escaneo de cada lenguaje debe mantenerse aislado en su propio repositorio,
+  base de datos y configuracion de despliegue.
