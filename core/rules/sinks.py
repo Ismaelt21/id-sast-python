@@ -205,6 +205,48 @@ SINKS: Dict[str, Sink] = {
         ]
     ),
 
+    "urllib_urlopen": Sink(
+        name="urllib.request.urlopen",
+        vulnerability="SSRF",
+        cwe="CWE-918",
+        severity="HIGH",
+        description="Remote URL fetch via urllib",
+        examples=[
+            "urllib.request.urlopen(url)"
+        ],
+        aliases=[
+            "urllib.request.urlopen",
+        ]
+    ),
+
+    "urllib_urlretrieve": Sink(
+        name="urllib.request.urlretrieve",
+        vulnerability="SSRF",
+        cwe="CWE-918",
+        severity="HIGH",
+        description="Remote file download via urllib",
+        examples=[
+            "urllib.request.urlretrieve(url, path)"
+        ],
+        aliases=[
+            "urllib.request.urlretrieve",
+        ]
+    ),
+
+    "http_connection": Sink(
+        name="http.client.HTTPConnection",
+        vulnerability="SSRF",
+        cwe="CWE-918",
+        severity="HIGH",
+        description="Outbound HTTP connection",
+        examples=[
+            "http.client.HTTPConnection(host)"
+        ],
+        aliases=[
+            "http.client.HTTPConnection",
+        ]
+    ),
+
     # =========================================================
     # XSS
     # =========================================================

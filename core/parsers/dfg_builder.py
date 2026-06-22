@@ -28,6 +28,11 @@ class DFGBuilder(ast.NodeVisitor):
         "os.system",
         "subprocess.run",
         "cursor.execute",
+        "requests.get",
+        "requests.post",
+        "urllib.request.urlopen",
+        "urllib.request.urlretrieve",
+        "http.client.HTTPConnection",
         "DANGEROUS_SINK",
     }
 
@@ -83,6 +88,10 @@ class DFGBuilder(ast.NodeVisitor):
     def visit_FunctionDef(self, node):
 
         self.current_function = node.name
+
+        for arg in node.args.args:
+            self._add_node(arg.arg, "source")
+            self.variable_origins[arg.arg] = "tainted"
 
         self.generic_visit(node)
 

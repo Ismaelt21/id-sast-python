@@ -132,6 +132,15 @@ class TestIsSink:
     def test_requests_post_is_sink(self):
         assert is_sink("requests.post") is True
 
+    def test_urllib_urlopen_is_sink(self):
+        assert is_sink("urllib.request.urlopen") is True
+
+    def test_urllib_urlretrieve_is_sink(self):
+        assert is_sink("urllib.request.urlretrieve") is True
+
+    def test_http_client_connection_is_sink(self):
+        assert is_sink("http.client.HTTPConnection") is True
+
     def test_pickle_loads_is_sink(self):
         assert is_sink("pickle.loads") is True
 

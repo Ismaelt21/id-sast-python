@@ -401,6 +401,32 @@ class TestSamplesCommandInjection:
 
 
 # =============================================================
+# SAMPLES — SSRF
+# =============================================================
+
+@pytest.mark.skipif(
+    not (SAMPLES_DIR / "ssrf").exists(),
+    reason="samples/vulnerable/ssrf/ not found"
+)
+class TestSamplesSSRF:
+
+    def test_requests_get_ssrf_detected(self):
+        code = _read(SAMPLES_DIR / "ssrf" / "requests_get.py")
+        result = _run_pipeline(code)
+        assert len(result["taint_findings"]) > 0
+        assert _has_finding_with(result, "SSRF")
+
+    def test_urllib_fetch_ssrf_detected(self):
+        code = _read(SAMPLES_DIR / "ssrf" / "urllib_fetch.py")
+        result = _run_pipeline(code)
+        assert isinstance(result["classified"], list)
+        assert any(
+            f["vulnerability_type"] == "SSRF"
+            for f in result["classified"]
+        )
+
+
+# =============================================================
 # SAMPLES — UNSAFE EVAL / CODE INJECTION
 # =============================================================
 

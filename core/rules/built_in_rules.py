@@ -348,6 +348,9 @@ BUILT_IN_RULES: Dict[str, BuiltInRule] = {
         sinks=[
             "requests.get",
             "requests.post",
+            "urllib.request.urlopen",
+            "urllib.request.urlretrieve",
+            "http.client.HTTPConnection",
         ],
         sanitizers=[
             "validators.url",
