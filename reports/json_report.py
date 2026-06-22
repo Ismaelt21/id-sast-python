@@ -232,6 +232,7 @@ class JSONReport:
             "HIGH":     0,
             "MEDIUM":   0,
             "LOW":      0,
+            "INFO":     0,
         }
 
         vulnerability_counter: Dict[str, int] = {}

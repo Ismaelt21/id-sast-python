@@ -130,6 +130,7 @@ class HTMLReport:
     --high: #f97316;
     --medium: #f59e0b;
     --low: #22c55e;
+    --info: #38bdf8;
     --chip: rgba(139, 224, 255, 0.08);
     --shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
 }}
@@ -296,6 +297,45 @@ body {{
 .risk-card.risk-medium strong {{ color: var(--medium); }}
 .risk-card.risk-high strong {{ color: var(--high); }}
 .risk-card.risk-critical strong {{ color: var(--critical); }}
+
+.severity-strip {{
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}}
+
+.severity-card {{
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+}}
+
+[data-theme="light"] .severity-card {{
+    background: rgba(248, 250, 252, 0.88);
+}}
+
+.severity-card span {{
+    display: block;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+}}
+
+.severity-card strong {{
+    display: block;
+    font-size: 1.5rem;
+    line-height: 1;
+}}
+
+.severity-card.severity-critical strong {{ color: var(--critical); }}
+.severity-card.severity-high strong {{ color: var(--high); }}
+.severity-card.severity-medium strong {{ color: var(--medium); }}
+.severity-card.severity-low strong {{ color: var(--low); }}
+.severity-card.severity-info strong {{ color: var(--info); }}
 
 .metric-card small {{
     display: block;
@@ -711,6 +751,7 @@ body {{
 @media (max-width: 1080px) {{
     .stats-grid,
     .hero-grid,
+    .severity-strip,
     .mini-grid,
     .graph-grid {{
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -732,6 +773,7 @@ body {{
     .panel__header,
     .panel__body,
     .stats-grid,
+    .severity-strip,
     .finding-list,
     .mini-grid,
     .graph-grid {{
@@ -785,6 +827,29 @@ body {{
                 <span>Archivos escaneados</span>
                 <strong>{total_files}</strong>
                 <small>Generated at {generated_at}</small>
+            </div>
+        </div>
+
+        <div class="severity-strip" aria-label="severity summary">
+            <div class="severity-card severity-critical">
+                <span>CRITICAL</span>
+                <strong>{severity["CRITICAL"]}</strong>
+            </div>
+            <div class="severity-card severity-high">
+                <span>HIGH</span>
+                <strong>{severity["HIGH"]}</strong>
+            </div>
+            <div class="severity-card severity-medium">
+                <span>MEDIUM</span>
+                <strong>{severity["MEDIUM"]}</strong>
+            </div>
+            <div class="severity-card severity-low">
+                <span>LOW</span>
+                <strong>{severity["LOW"]}</strong>
+            </div>
+            <div class="severity-card severity-info">
+                <span>INFO</span>
+                <strong>{severity.get("INFO", 0)}</strong>
             </div>
         </div>
 
@@ -1411,6 +1476,7 @@ body {{
             "HIGH": int(severity.get("HIGH", 0)),
             "MEDIUM": int(severity.get("MEDIUM", 0)),
             "LOW": int(severity.get("LOW", 0)),
+            "INFO": int(severity.get("INFO", 0)),
         }
 
     @staticmethod
