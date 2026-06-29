@@ -1190,7 +1190,9 @@ body {{
         if not vulnerabilities:
             return []
         items = sorted(vulnerabilities.items(), key=lambda item: (-int(item[1]), item[0]))
-        return [{"name": name, "count": int(count)} for name, count in items[:5]]
+        # Keep the full set of most relevant types so benchmark-sized corpora
+        # do not hide a category that ties on count with another one.
+        return [{"name": name, "count": int(count)} for name, count in items[:6]]
 
     @staticmethod
     def _render_count_list(items: List[Dict[str, Any]]) -> str:
@@ -1258,7 +1260,7 @@ body {{
         }
 
         blocks = []
-        for item in top_types[:4]:
+        for item in top_types[:6]:
             vuln = item["name"]
             count = item["count"]
             blocks.append(
