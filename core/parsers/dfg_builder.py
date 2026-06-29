@@ -41,6 +41,12 @@ class DFGBuilder(ast.NodeVisitor):
         "http.client.HTTPConnection",
         "render_template_string",
         "make_response",
+        "redirect",
+        "flask.redirect",
+        "ElementTree.parse",
+        "xml.etree.ElementTree.parse",
+        "etree.parse",
+        "lxml.etree.parse",
         "DANGEROUS_SINK",
     }
 
@@ -207,6 +213,20 @@ class DFGBuilder(ast.NodeVisitor):
                     self.variable_origins[target] = "tainted"
 
         # -------------------------------------------------
+        # CASO 2.5: Reasignacion a valor literal / constante
+        # next_url = "/dashboard"
+        # Si una variable taintada se sobreescribe con un valor
+        # seguro antes del sink, no debe seguir fluyendo como
+        # entrada no confiable.
+        # -------------------------------------------------
+
+        elif isinstance(value, (ast.Constant, ast.Dict, ast.List, ast.Tuple, ast.Set)):
+
+            for target in targets:
+                self._add_node(target, "variable")
+                self.variable_origins[target] = "clean"
+
+        # -------------------------------------------------
         # CASO 3: Asignación desde BinOp
         # query = "SELECT * FROM users WHERE id=" + user
         # Corrección #2: también detectamos calls embebidos
@@ -328,9 +348,23 @@ class DFGBuilder(ast.NodeVisitor):
         Conecta todas las variables de un argumento al nodo destino.
         """
 
+        if isinstance(arg_node, ast.Call):
+            call_name = self._get_call_name(arg_node)
+
+            if call_name in self.SOURCES:
+                self._add_node(call_name, "source")
+                self.graph.add_edge(
+                    call_name,
+                    target_id,
+                    type=edge_type,
+                )
+                return
+
         variables = self._extract_variables(arg_node)
 
         for var in variables:
+            if self.variable_origins.get(var) != "tainted":
+                continue
 
             self._add_node(var, "variable")
 
