@@ -230,8 +230,8 @@ El repositorio incluye dos conjuntos de benchmarks para validacion:
 Para ejecutar el benchmark desde la CLI del producto:
 
 ```powershell
-id-sast-python scan .\tests\samples\thesis_case\ --no-persist --html-only
-id-sast-python scan .\tests\samples\thesis_case_controls\ --no-persist --html-only
+id-sast-python scan .\tests\samples\thesis_case\ --html-only
+id-sast-python scan .\tests\samples\thesis_case_controls\ --html-only
 ```
 
 Para ejecutar la validacion dedicada del corpus de tesis:
@@ -261,9 +261,9 @@ Para comprobar el funcionamiento del servicio:
 
 ```powershell
 python -m pytest
-id-sast-python scan .\samples\vulnerable\unsafe_eval --no-persist --html-only
-id-sast-python scan .\samples\vulnerable\hardcoded_secrets --no-persist --html-only
-id-sast-python scan .\samples\vulnerable\xss --no-persist --html-only
+id-sast-python scan .\samples\vulnerable\unsafe_eval --html-only
+id-sast-python scan .\samples\vulnerable\hardcoded_secrets --html-only
+id-sast-python scan .\samples\vulnerable\xss --html-only
 ```
 
 ## Estado del componente
