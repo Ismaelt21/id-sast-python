@@ -137,10 +137,12 @@ TEMP_DIR=storage/temp
 
 - La base de datos de Python debe ser independiente de la de C#.
 - La persistencia de cada microservicio debe configurarse por separado.
-- La persistencia en MongoDB esta desactivada por defecto en la interfaz de linea
-  de comandos y en la API; se activa de forma explicita con `--persist` o con
-  `persist=true` en la peticion.
-- Si `USE_PERSISTENCE=false`, el motor puede ejecutarse sin escribir en MongoDB.
+- La persistencia en MongoDB esta desactivada por defecto en la interfaz de
+  linea de comandos y en la API. Para habilitarla, use `--persist` en la CLI o
+  envie `persist=true` en la peticion HTTP.
+- `USE_PERSISTENCE=false` refuerza ese comportamiento y permite ejecutar el
+  motor sin escribir en MongoDB incluso cuando la configuracion de entorno no
+  expone credenciales.
 - Si `USE_GEMINI=false` o `ENABLE_AI_ANALYSIS=false`, el analisis se ejecuta sin
   asistencia de IA.
 - `config/settings.py` es la fuente de verdad para cargar la configuracion.
@@ -248,9 +250,10 @@ Actualmente el corpus cubre estas categorias en el benchmark principal:
 - `OPEN_REDIRECT`
 - `XXE`
 
-En el estado actual del motor, `OPEN_REDIRECT` y `XXE` se mantienen como gaps
-conocidos del pipeline, documentados en las pruebas para no ocultar limitaciones
-reales del analizador.
+En el estado actual del motor, las seis categorias del benchmark principal
+deben detectarse en el corpus positivo. Si alguna falta en un reporte concreto,
+debe tratarse como una regresion del pipeline o como una limitacion real que
+debe documentarse de forma explicita.
 
 ## Validacion general
 
