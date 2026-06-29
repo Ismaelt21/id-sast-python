@@ -1,0 +1,311 @@
+<mxfile host="Electron" agent="Codex" pages="2">
+  <diagram id="c4-python" name="C4 - id-sast-python">
+    <mxGraphModel dx="2307" dy="1138" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2100" pageHeight="1300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;" value="2.2.9 Arquitectura del componente id-sast-python" vertex="1">
+          <mxGeometry height="30" width="640" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="person" parent="1" style="shape=mxgraph.c4.person2;html=1;whiteSpace=wrap;fillColor=#08427b;strokeColor=#052e56;fontColor=#ffffff;fontSize=14;" value="Usuario" vertex="1">
+          <mxGeometry height="140" width="120" x="40" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="source" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" value="Proyecto Python objetivo&#xa;&#xa;Codigo fuente .py a analizar" vertex="1">
+          <mxGeometry height="90" width="240" x="1780" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="gemini-external" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;strokeColor=#6b6b6b;fontColor=#ffffff;fontSize=13;" value="Google Gemini API&#xa;Servicio externo de validacion semantica&#xa;para hallazgos ambiguos" vertex="1">
+          <mxGeometry height="110" width="260" x="1760" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="atlas" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#1168bd;strokeColor=#0b4884;fontColor=#ffffff;fontSize=13;" value="MongoDB Atlas&#xa;Persistencia opcional de analisis&#xa;y reglas del sistema" vertex="1">
+          <mxGeometry height="110" width="260" x="1760" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;arcSize=12;strokeColor=#666666;fontColor=#333333;fillColor=none;fontSize=16;align=left;spacing=12;" value="" vertex="1">
+          <mxGeometry height="1040" width="1500" x="220" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="API HTTP&#xa;FastAPI + ScanService&#xa;Expone /health, /version,&#xa;POST /scan y GET /scan/{id}." vertex="1">
+          <mxGeometry height="120" width="260" x="320" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="cli" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="CLI local&#xa;Entrada para escaneo manual.&#xa;Construye solicitudes equivalentes&#xa;y reutiliza el mismo flujo del servicio." vertex="1">
+          <mxGeometry height="120" width="260" x="320" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="service" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="PySAST Engine&#xa;engine/pysast.py&#xa;Coordina el pipeline de analisis del proyecto,&#xa;descubre archivos y ejecuta el flujo completo." vertex="1">
+          <mxGeometry height="120" width="280" x="820" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="engine" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="Parseo y normalizacion&#xa;ASTParser + ASTNormalizer&#xa;Transforman el codigo Python en una&#xa;representacion estructurada utilizable." vertex="1">
+          <mxGeometry height="120" width="280" x="1320" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="flow" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="Modelado de flujo&#xa;CFGBuilder + DFGBuilder&#xa;Construyen las representaciones de flujo&#xa;de control y flujo de datos." vertex="1">
+          <mxGeometry height="120" width="260" x="320" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="analyzers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="Motor de reglas y analizadores&#xa;HardcodedSecretAnalyzer + TaintAnalyzer +&#xa;PatternMatcher + VulnerabilityClassifier&#xa;Evaluan flujo, patrones y severidad." vertex="1">
+          <mxGeometry height="120" width="280" x="820" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="semantic" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="Reduccion semantica opcional&#xa;SemanticAnalyzer + Gemini support&#xa;Revisa hallazgos ambiguos y enriquece&#xa;contexto sin sustituir el analisis estatico." vertex="1">
+          <mxGeometry height="120" width="280" x="1320" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="reports" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="Reportes y salida&#xa;ConsoleReport + JSONReport + HTMLReport&#xa;Generan salidas legibles, trazables&#xa;y coherentes entre API y CLI." vertex="1">
+          <mxGeometry height="120" width="280" x="820" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="db-layer" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438dd5;strokeColor=#2e6295;fontColor=#ffffff;fontSize=13;" value="Persistencia opcional&#xa;MongoDB + ScanRepository +&#xa;AnalysisRepository + RuleRepository&#xa;Guarda escaneos, reglas y metadatos." vertex="1">
+          <mxGeometry height="120" width="280" x="1320" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="person" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="api" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1l" connectable="0" parent="e1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="consume API" vertex="1">
+          <mxGeometry relative="1" x="0.1" y="-1" as="geometry">
+            <mxPoint x="-26" y="-16" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="person" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="cli" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2l" connectable="0" parent="e2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="ejecuta scan local" vertex="1">
+          <mxGeometry relative="1" x="0.2" y="-1" as="geometry">
+            <mxPoint x="-30" y="24" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="service" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3l" connectable="0" parent="e3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="orquesta solicitud HTTP" vertex="1">
+          <mxGeometry relative="1" x="0.1" y="-1" as="geometry">
+            <mxPoint x="-18" y="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="cli" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="service" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4l" connectable="0" parent="e4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="reutiliza el mismo engine" vertex="1">
+          <mxGeometry relative="1" x="0.1" y="-1" as="geometry">
+            <mxPoint x="-37" y="-101" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="service" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="engine" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5l" connectable="0" parent="e5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="parsea y normaliza codigo" vertex="1">
+          <mxGeometry relative="1" x="0.05" y="-2" as="geometry">
+            <mxPoint x="-22" y="-18" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="engine" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="flow" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6l" connectable="0" parent="e6" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="construye CFG y DFG" vertex="1">
+          <mxGeometry relative="1" x="0.2" y="-1" as="geometry">
+            <mxPoint x="61" y="451" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="flow" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="analyzers" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7l" connectable="0" parent="e7" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="evalua flujo y reglas" vertex="1">
+          <mxGeometry relative="1" x="0.15" y="-1" as="geometry">
+            <mxPoint x="-222" y="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="analyzers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="semantic" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8l" connectable="0" parent="e8" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="hallazgos ambiguos" vertex="1">
+          <mxGeometry relative="1" x="0.15" y="-1" as="geometry">
+            <mxPoint x="-12" y="-24" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="semantic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="reports" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9l" connectable="0" parent="e9" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="resultado final enriquecido" vertex="1">
+          <mxGeometry relative="1" x="0.12" y="-1" as="geometry">
+            <mxPoint x="-248" y="-29" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="reports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="db-layer" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10l" connectable="0" parent="e10" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="persiste escaneos y reglas" vertex="1">
+          <mxGeometry relative="1" x="0.15" y="-1" as="geometry">
+            <mxPoint x="-8" y="-24" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="semantic" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#999999;" target="gemini-external" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1600" y="320" />
+              <mxPoint x="1790" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11l" connectable="0" parent="e11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="consulta semantica opcional" vertex="1">
+          <mxGeometry relative="1" x="0.15" y="-1" as="geometry">
+            <mxPoint x="34" y="-26" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="db-layer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="atlas" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12l" connectable="0" parent="e12" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="analisis y metadatos" vertex="1">
+          <mxGeometry relative="1" x="0.2" y="-1" as="geometry">
+            <mxPoint x="-8" y="-20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="reports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;strokeColor=#0b4884;" target="person" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="980" />
+              <mxPoint x="100" y="980" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13l" connectable="0" parent="e13" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;" value="console / JSON / HTML" vertex="1">
+          <mxGeometry relative="1" x="0.6" y="-1" as="geometry">
+            <mxPoint x="-8" y="-24" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" value="Lectura sugerida: API y CLI reutilizan el mismo flujo; PySAST coordina parseo, modelado de flujo, deteccion, reduccion semantica opcional, reportes y persistencia." vertex="1">
+          <mxGeometry height="70" width="1960" x="40" y="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="5-Hubr234Myq31BIfvSG-1" parent="1" style="text;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;color: rgb(193, 193, 193); font-family: Helvetica; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(27, 29, 30); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;id-sast-python&lt;/span&gt;&lt;br style=&quot;forced-color-adjust: none; box-shadow: none !important; color: rgb(193, 193, 193); font-family: Helvetica; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(27, 29, 30); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;&quot;&gt;&lt;span style=&quot;color: rgb(193, 193, 193); font-family: Helvetica; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(27, 29, 30); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;Componente SAST para Python&lt;/span&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="30" y="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="pipeline-python" name="Pipeline completo">
+    <mxGraphModel dx="1810" dy="976" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p-title" value="Pipeline completo de id-sast-python" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="520" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="step1" value="1. Entrada&#xa;&#xa;API o CLI construyen la solicitud&#xa;y delegan al servicio de escaneo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step2" value="2. Orquestacion de servicio&#xa;&#xa;ScanService valida la ruta, ajusta flags&#xa;y crea la instancia de PySAST" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="320" y="120" width="240" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step3" value="3. Descubrimiento de archivos&#xa;&#xa;PySAST localiza archivos .py validos&#xa;y aplica limites de tamano/directorios" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="600" y="120" width="250" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step4" value="4. Parseo y normalizacion&#xa;&#xa;ASTParser genera el AST y ASTNormalizer&#xa;lo deja listo para las siguientes fases" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="890" y="120" width="260" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step5" value="5. Construccion de grafos&#xa;&#xa;CFGBuilder y DFGBuilder construyen&#xa;las estructuras de control y datos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="120" width="250" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step6a" value="6A. Hardcoded secrets&#xa;&#xa;HardcodedSecretAnalyzer detecta&#xa;credenciales expuestas en el codigo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="420" y="320" width="250" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step6b" value="6B. Taint analysis&#xa;&#xa;TaintAnalyzer recorre el DFG&#xa;y produce flujos potencialmente peligrosos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="720" y="320" width="260" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step7" value="7. Matching y analisis semantico&#xa;&#xa;PatternMatcher contrasta reglas integradas&#xa;y SemanticAnalyzer revisa flujos ambiguos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="320" width="290" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step8" value="8. Clasificacion&#xa;&#xa;VulnerabilityClassifier unifica findings,&#xa;asigna severidad, CWE y recomendacion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="320" width="280" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step9" value="9. Reglas IA opcionales&#xa;&#xa;RuleGenerator puede proponer reglas nuevas&#xa;a partir de hallazgos con flujo detectado" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="720" y="500" width="260" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step10" value="10. Reporte canonico&#xa;&#xa;JSONReport consolida metadata, proyecto,&#xa;estadisticas, findings, IA y grafos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="500" width="290" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step11a" value="11A. Salida HTML&#xa;&#xa;HTMLReport genera el reporte visual&#xa;para revision manual" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1380" y="500" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step11b" value="11B. Salida consola&#xa;&#xa;ConsoleReport resume findings&#xa;cuando no se limita a HTML/JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1640" y="500" width="220" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step12" value="12. Contrato de servicio&#xa;&#xa;ScanService envuelve el resultado final,&#xa;agrega scan_id y resumen de severidad" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="700" width="290" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step13" value="13. Persistencia opcional&#xa;&#xa;ScanRepository guarda el documento final;&#xa;AnalysisRepository y RuleRepository guardan detalle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1370" y="700" width="310" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="step14" value="14. Respuesta final&#xa;&#xa;API devuelve ScanResponse y la CLI&#xa;imprime el mismo contrato en JSON" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;" vertex="1" parent="1">
+          <mxGeometry x="720" y="700" width="260" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="gemini" value="Gemini support&#xa;&#xa;Se usa como apoyo semantico posterior&#xa;al analisis estatico, no como detector primario" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;dashed=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="900" width="420" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pe1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step1" target="step2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step2" target="step3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step3" target="step4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step4" target="step5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step5" target="step6a">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1315" y="275" />
+              <mxPoint x="545" y="275" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pe6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step5" target="step6b">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1315" y="275" />
+              <mxPoint x="850" y="275" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pe7" value="flujos tainted" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step6b" target="step7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe8" value="hallazgos de secretos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step6a" target="step8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="545" y="455" />
+              <mxPoint x="1510" y="455" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pe9" value="hallazgos enriquecidos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step7" target="step8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe10" value="opcional" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step6b" target="step9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step8" target="step10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510" y="465" />
+              <mxPoint x="1175" y="465" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pe12" value="reglas generadas" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step9" target="step10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step10" target="step11a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step10" target="step11b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step10" target="step12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe16" value="retorno API / CLI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step12" target="step14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe17" value="persist=true" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=block;endFill=1;" edge="1" parent="1" source="step12" target="step13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p-legend" value="Lectura sugerida: el pipeline parte de API/CLI, se centraliza en ScanService, el engine construye AST + CFG + DFG, ejecuta analyzers, clasifica findings, genera el reporte canonico y luego deriva salidas y persistencia." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1040" width="1820" height="70" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
