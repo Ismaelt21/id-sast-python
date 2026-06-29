@@ -88,12 +88,14 @@ class HTMLReport:
             false_positives_removed, total_findings
         )
 
-        frameworks_detected = self._extract_frameworks(findings)
-        frameworks_text = self._esc(", ".join(frameworks_detected)) if frameworks_detected else "No disponible"
         analysis_metrics = self._build_analysis_metrics(report_data, findings, graphs)
-        top_files_html = self._esc(self._build_top_files(findings))
-        top_types_html = self._esc(self._build_top_types(stats))
-        frameworks_detected_html = self._esc(self._build_frameworks_detected(findings, project))
+        top_files = self._build_top_files(findings)
+        top_types = self._build_top_types(stats)
+        extracted_frameworks = self._extract_frameworks(findings)
+        frameworks_text = ", ".join(extracted_frameworks) if extracted_frameworks else "No disponible"
+        remediation_summary = self._build_remediation_summary(top_types)
+        analysis_metrics_html = self._build_analysis_metrics_html(analysis_metrics)
+        context_html = self._build_context_html(top_files, top_types, frameworks_text, remediation_summary)
         duration_text = self._esc(self._format_duration(scan_summary))
 
         counts = {
@@ -103,10 +105,6 @@ class HTMLReport:
         }
 
         findings_html = self._build_findings(findings)
-        ai_html = self._build_ai_analysis(ai_analysis)
-        rules_html = self._build_rules(generated_rules)
-        graph_html = self._build_graphs(graphs)
-
         year = datetime.utcnow().year
         scan_id = self._esc(str(scan_summary.get("scan_id", report_data.get("scan_id", "N/A"))))
 
@@ -630,6 +628,131 @@ body {{
     gap: 12px;
 }}
 
+.panel--wide {{
+    width: 100%;
+}}
+
+.metric-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    padding: 24px;
+}}
+
+.metric-box {{
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+}}
+
+.metric-box span {{
+    display: block;
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-bottom: 8px;
+}}
+
+.metric-box strong {{
+    display: block;
+    font-size: 2rem;
+    line-height: 1.1;
+}}
+
+.metric-box small {{
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+}}
+
+.two-col {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+    padding: 0 24px 24px;
+}}
+
+.mini-panel {{
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.02);
+}}
+
+.mini-panel h3 {{
+    margin: 0 0 10px;
+    font-size: 0.96rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--primary);
+}}
+
+.mini-panel p {{
+    margin: 0;
+    color: var(--muted);
+}}
+
+.context-row {{
+    padding: 0 24px;
+}}
+
+.compact-list {{
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 8px;
+}}
+
+.compact-list li {{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 8px;
+}}
+
+.compact-list strong {{
+    color: var(--text);
+}}
+
+.remediation-grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    padding: 14px 24px 24px;
+}}
+
+.remediation-item {{
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.03);
+}}
+
+.remediation-item strong {{
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text);
+}}
+
+.remediation-item p {{
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+}}
+
+.remediation-item small {{
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+}}
+
+.timing-line {{
+    margin: 14px 24px 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+}}
+
 .section-card {{
     border: 1px solid var(--line);
     border-radius: 16px;
@@ -788,7 +911,10 @@ body {{
     .finding__meta,
     .summary-grid--csharp,
     .summary-grid--metrics,
-    .section-card-grid {{
+    .section-card-grid,
+    .metric-grid,
+    .two-col,
+    .remediation-grid {{
         grid-template-columns: 1fr;
     }}
 
@@ -911,71 +1037,13 @@ body {{
                 <p>Indicadores de ejecución y cobertura del pipeline.</p>
             </div>
         </div>
-        <div class="mini-grid mini-grid--dense">
-            <div class="mini-kpi">
-                <span>Archivos</span>
-                <strong>{analysis_metrics["files_scanned"]}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Métodos</span>
-                <strong>{methods_count}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Nodos</span>
-                <strong>{analysis_metrics["nodes"]}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Sources</span>
-                <strong>{analysis_metrics["sources"]}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Sinks</span>
-                <strong>{analysis_metrics["sinks"]}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Sanitizers</span>
-                <strong>{analysis_metrics["sanitizers"]}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Taint paths</span>
-                <strong>{analysis_metrics["taint_paths"]}</strong>
-            </div>
-            <div class="mini-kpi">
-                <span>Reglas</span>
-                <strong>{len(generated_rules)}</strong>
-            </div>
+        <div class="metric-grid">
+            {analysis_metrics_html}
         </div>
-        {ai_html}
+        <div class="timing-line">Duración total: {duration_text}</div>
     </section>
 
-    <section class="panel">
-        <div class="panel__header">
-            <div>
-                <h2>Contexto y remediación</h2>
-                <p>Arquitectura observada, archivos más afectados y sugerencias base.</p>
-            </div>
-        </div>
-        <div class="section-card-grid">
-            <div class="section-card">
-                <h3>Top archivos</h3>
-                <p>{top_files_html}</p>
-            </div>
-            <div class="section-card">
-                <h3>Top tipos</h3>
-                <p>{top_types_html}</p>
-            </div>
-            <div class="section-card">
-                <h3>Frameworks detectados</h3>
-                <p>{frameworks_detected_html}</p>
-            </div>
-            <div class="section-card">
-                <h3>Duración total</h3>
-                <p>{duration_text}</p>
-            </div>
-        </div>
-        {rules_html}
-        {graph_html}
-    </section>
+    {context_html}
 
     <div class="footer">id-sast-python &copy; {year}</div>
 </div>
@@ -1065,37 +1133,155 @@ body {{
         sources = sum(1 for finding in findings if finding.get("source"))
         sinks = sum(1 for finding in findings if finding.get("sink") or finding.get("sink_label"))
         sanitizers = sum(1 for finding in findings if finding.get("sanitized") is True)
+        methods = len(
+            {
+                str(finding.get(key))
+                for finding in findings
+                for key in ("method", "method_name", "function", "function_name", "callee")
+                if finding.get(key)
+            }
+        )
 
         return {
             "files_scanned": scan_summary.get(
                 "files_scanned",
                 len(report_data.get("project", {}).get("scanned_files", [])),
             ),
+            "methods": methods,
             "nodes": graph_nodes,
             "sources": sources,
             "sinks": sinks,
             "sanitizers": sanitizers,
             "taint_paths": graph_taint_paths or int(stats.get("total_findings", len(findings))),
+            "rules": len(report_data.get("generated_rules", []) or []),
         }
 
     @staticmethod
-    def _build_top_files(findings: List[Dict]) -> str:
+    def _build_analysis_metrics_html(metrics: Dict[str, Any]) -> str:
+        cards = [
+            ("Archivos", metrics.get("files_scanned", 0), "Scope del corpus analizado"),
+            ("Métodos", metrics.get("methods", 0), "Funciones o métodos detectados"),
+            ("Nodos", metrics.get("nodes", 0), "Nodos de AST, CFG y DFG"),
+            ("Sources", metrics.get("sources", 0), "Entradas no confiables en el flujo"),
+            ("Sinks", metrics.get("sinks", 0), "Operaciones críticas alcanzadas"),
+            ("Sanitizers", metrics.get("sanitizers", 0), "Puntos de validación observados"),
+            ("Taint paths", metrics.get("taint_paths", 0), "Caminos de flujo observados"),
+            ("Reglas", metrics.get("rules", 0), "Tipos de vulnerabilidad cubiertos"),
+        ]
+        return "".join(
+            f'<div class="metric-box"><span>{label}</span><strong>{value}</strong><small>{note}</small></div>'
+            for label, value, note in cards
+        )
+
+    @staticmethod
+    def _build_top_files(findings: List[Dict]) -> List[Dict[str, Any]]:
         counts: Dict[str, int] = {}
         for finding in findings:
             file_name = Path(str(finding.get("file", "unknown"))).name
             counts[file_name] = counts.get(file_name, 0) + 1
         if not counts:
-            return "No disponible"
+            return []
         items = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
-        return ", ".join(f"{name} ({count})" for name, count in items[:5])
+        return [{"name": name, "count": count} for name, count in items[:5]]
 
     @staticmethod
-    def _build_top_types(stats: Dict) -> str:
+    def _build_top_types(stats: Dict) -> List[Dict[str, Any]]:
         vulnerabilities = stats.get("vulnerabilities", {}) or {}
         if not vulnerabilities:
-            return "No disponible"
+            return []
         items = sorted(vulnerabilities.items(), key=lambda item: (-int(item[1]), item[0]))
-        return ", ".join(f"{name} ({count})" for name, count in items[:5])
+        return [{"name": name, "count": int(count)} for name, count in items[:5]]
+
+    @staticmethod
+    def _render_count_list(items: List[Dict[str, Any]]) -> str:
+        if not items:
+            return '<li><span>No disponible</span><strong>0</strong></li>'
+        return "".join(
+            f'<li><span>{html_lib.escape(str(item["name"]))}</span><strong>{item["count"]}</strong></li>'
+            for item in items
+        )
+
+    def _build_context_html(
+        self,
+        top_files: List[Dict[str, Any]],
+        top_types: List[Dict[str, Any]],
+        frameworks_text: str,
+        remediation_summary: str,
+    ) -> str:
+        return f"""
+    <section class="panel panel--wide">
+        <div class="panel__header">
+            <div>
+                <h2>Contexto y remediación</h2>
+                <p>Arquitectura observada, archivos más afectados y sugerencias base.</p>
+            </div>
+        </div>
+        <div class="two-col">
+            <div class="mini-panel">
+                <h3>Top archivos</h3>
+                <ul class="compact-list">
+                    {self._render_count_list(top_files)}
+                </ul>
+            </div>
+            <div class="mini-panel">
+                <h3>Top tipos</h3>
+                <ul class="compact-list">
+                    {self._render_count_list(top_types)}
+                </ul>
+            </div>
+        </div>
+        <div class="context-row">
+            <div class="mini-panel">
+                <h3>Frameworks detectados</h3>
+                <p>{self._esc(frameworks_text)}</p>
+            </div>
+        </div>
+        <div class="remediation-grid">
+            {self._render_remediation_cards(top_types, remediation_summary)}
+        </div>
+    </section>
+"""
+
+    def _render_remediation_cards(self, top_types: List[Dict[str, Any]], remediation_summary: str) -> str:
+        if not top_types:
+            return '<div class="remediation-item"><strong>No disponible</strong><p>No se detectaron hallazgos para priorizar remediación.</p><small>0 findings</small></div>'
+
+        recommendations = {
+            "SQL_INJECTION": "Usar consultas parametrizadas.",
+            "PATH_TRAVERSAL": "Normalizar rutas y restringir directorios permitidos.",
+            "SSRF": "Validar destino con allowlist antes de cualquier request.",
+            "XSS": "Codificar o escapar la salida antes de renderizar HTML.",
+            "COMMAND_INJECTION": "Evitar shell y usar argumentos seguros.",
+            "OPEN_REDIRECT": "Validar URLs locales antes de redirigir.",
+            "XXE": "Usar parsers seguros y desactivar DTD o entidades externas.",
+            "INSECURE_DESERIALIZATION": "Evitar deserializar datos no confiables.",
+        }
+
+        blocks = []
+        for item in top_types[:4]:
+            vuln = item["name"]
+            count = item["count"]
+            blocks.append(
+                f'<div class="remediation-item"><strong>{self._esc(vuln)}</strong><p>{self._esc(recommendations.get(vuln, remediation_summary))}</p><small>{count} findings</small></div>'
+            )
+        return "".join(blocks)
+
+    @staticmethod
+    def _build_remediation_summary(top_types: List[Dict[str, Any]]) -> str:
+        if not top_types:
+            return "No se detectaron hallazgos para priorizar remediación."
+
+        top = top_types[0]["name"]
+        recommendations = {
+            "SQL_INJECTION": "Use queries parametrizadas y evite concatenación de cadenas.",
+            "PATH_TRAVERSAL": "Normalice rutas y limite el acceso a directorios permitidos.",
+            "SSRF": "Aplique allowlists de hosts y valide el esquema antes de hacer requests.",
+            "XSS": "Escape la salida y evite renderizar entrada del usuario sin codificar.",
+            "COMMAND_INJECTION": "Evite shell=True y use argumentos separados o quoting seguro.",
+            "OPEN_REDIRECT": "Valide destinos con una allowlist de rutas internas.",
+            "XXE": "Use parsers seguros y desactive DTD o entidades externas.",
+        }
+        return recommendations.get(top, "Revise el flujo de datos, la fuente y el sink dominante.")
 
     @staticmethod
     def _build_frameworks_detected(findings: List[Dict], project: Dict) -> str:
