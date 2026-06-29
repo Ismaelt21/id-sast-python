@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class ScanRequest(BaseModel):
     project_path: str = Field(..., description="Absolute or relative path to a Python project")
     use_ai: bool = Field(default=True, description="Enable Gemini-assisted analysis")
-    persist: bool = Field(default=True, description="Persist the scan result")
+    persist: bool = Field(default=False, description="Persist the scan result in MongoDB")
     json_only: bool = Field(default=False, description="Export JSON only")
     html_only: bool = Field(default=False, description="Export HTML only")
     verbose: bool = Field(default=False, description="Enable verbose logging")
@@ -33,4 +33,3 @@ class HealthResponse(BaseModel):
     status: str
     service: str
     version: str
-

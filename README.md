@@ -137,6 +137,9 @@ TEMP_DIR=storage/temp
 
 - La base de datos de Python debe ser independiente de la de C#.
 - La persistencia de cada microservicio debe configurarse por separado.
+- La persistencia en MongoDB esta desactivada por defecto en la interfaz de linea
+  de comandos y en la API; se activa de forma explicita con `--persist` o con
+  `persist=true` en la peticion.
 - Si `USE_PERSISTENCE=false`, el motor puede ejecutarse sin escribir en MongoDB.
 - Si `USE_GEMINI=false` o `ENABLE_AI_ANALYSIS=false`, el analisis se ejecuta sin
   asistencia de IA.
@@ -147,9 +150,9 @@ TEMP_DIR=storage/temp
 ### CLI
 
 ```powershell
-id-sast-python scan .\samples\vulnerable\unsafe_eval --no-persist --html-only
+id-sast-python scan .\samples\vulnerable\unsafe_eval --persist --html-only
 id-sast-python scan .\samples\vulnerable\sqli --no-ai --json-only
-id-sast-python scan .\samples\vulnerable\xss --no-persist --html-only
+id-sast-python scan .\samples\vulnerable\xss --persist --html-only
 ```
 
 ### Comportamiento de la salida

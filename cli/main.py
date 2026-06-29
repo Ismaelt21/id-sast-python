@@ -21,7 +21,17 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser = subparsers.add_parser("scan", help="Scan a Python project")
     scan_parser.add_argument("path", help="Path to the project or file")
     scan_parser.add_argument("--no-ai", action="store_true", help="Disable AI analysis")
-    scan_parser.add_argument("--no-persist", action="store_true", help="Do not persist the scan result")
+    persist_group = scan_parser.add_mutually_exclusive_group()
+    persist_group.add_argument(
+        "--persist",
+        action="store_true",
+        help="Persist the scan result in MongoDB",
+    )
+    persist_group.add_argument(
+        "--no-persist",
+        action="store_true",
+        help="Do not persist the scan result",
+    )
     scan_parser.add_argument("--json-only", action="store_true", help="Generate JSON only")
     scan_parser.add_argument("--html-only", action="store_true", help="Generate HTML only")
     scan_parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -65,7 +75,7 @@ def main() -> None:
         request = ScanRequest(
             project_path=str(Path(args.path).resolve()),
             use_ai=not args.no_ai,
-            persist=not args.no_persist,
+            persist=bool(args.persist),
             json_only=args.json_only,
             html_only=args.html_only,
             verbose=args.verbose,
@@ -78,4 +88,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
