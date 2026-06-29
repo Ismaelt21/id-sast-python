@@ -67,11 +67,14 @@ class ConsoleReport:
 
         print(
             f"\n{self.CYAN}{self.BOLD}"
-            f"========================================"
+            f"=============================================="
         )
-        print("           PY-SAST REPORT")
+        print("                 PY-SAST REPORT")
         print(
-            f"========================================"
+            "   Executive summary for the Python SAST engine"
+        )
+        print(
+            f"=============================================="
             f"{self.RESET}\n"
         )
 
@@ -95,7 +98,7 @@ class ConsoleReport:
             environment = "unknown"
 
         print(f"{self.BOLD}Project:{self.RESET}       {project_name}")
-        print(f"{self.BOLD}Files Scanned:{self.RESET} {len(scanned_files)}")
+        print(f"{self.BOLD}Scope:{self.RESET}         {len(scanned_files)} files")
         print(f"{self.BOLD}Generated:{self.RESET}     {datetime.utcnow().isoformat()}")
         print(f"{self.BOLD}Environment:{self.RESET}   {environment}")
         print()
@@ -123,12 +126,15 @@ class ConsoleReport:
             if severity in severity_stats:
                 severity_stats[severity] += 1
 
-        print(f"{self.BOLD}Statistics:{self.RESET}")
-        print(f"  Total Findings : {len(findings)}")
-        print(f"  {self.RED}CRITICAL{self.RESET}       : {severity_stats['CRITICAL']}")
-        print(f"  {self.RED}HIGH    {self.RESET}       : {severity_stats['HIGH']}")
-        print(f"  {self.YELLOW}MEDIUM  {self.RESET}       : {severity_stats['MEDIUM']}")
-        print(f"  {self.GREEN}LOW     {self.RESET}       : {severity_stats['LOW']}")
+        risk_level = self._derive_risk_level(severity_stats)
+
+        print(f"{self.BOLD}Executive summary:{self.RESET}")
+        print(f"  Risk level      : {risk_level}")
+        print(f"  Total findings  : {len(findings)}")
+        print(f"  {self.RED}CRITICAL{self.RESET}        : {severity_stats['CRITICAL']}")
+        print(f"  {self.RED}HIGH{self.RESET}             : {severity_stats['HIGH']}")
+        print(f"  {self.YELLOW}MEDIUM{self.RESET}           : {severity_stats['MEDIUM']}")
+        print(f"  {self.GREEN}LOW{self.RESET}              : {severity_stats['LOW']}")
         print()
 
     # =========================================================
@@ -181,12 +187,12 @@ class ConsoleReport:
             f"[{index}] {severity} - {vulnerability_type}"
             f"{self.RESET}"
         )
-        print(f"  File        : {file_path}")
-        print(f"  Line        : {line}")
-        print(f"  Source      : {source}")
-        print(f"  Sink        : {sink}")
-        print(f"  Confidence  : {confidence}")
-        print(f"  Description : {description}")
+        print(f"  File       : {file_path}")
+        print(f"  Line       : {line}")
+        print(f"  Source     : {source}")
+        print(f"  Sink       : {sink}")
+        print(f"  Confidence : {confidence}")
+        print(f"  Summary    : {description}")
         print()
 
     # =========================================================
@@ -210,9 +216,9 @@ class ConsoleReport:
 
     def _print_footer(self) -> None:
 
-        print(f"{self.CYAN}{'=' * 40}")
-        print("        Scan Completed")
-        print(f"{'=' * 40}{self.RESET}\n")
+        print(f"{self.CYAN}{'=' * 46}")
+        print("               Scan completed")
+        print(f"{'=' * 46}{self.RESET}\n")
 
     # =========================================================
     # QUICK SUMMARY
@@ -252,6 +258,18 @@ class ConsoleReport:
 
         print(f"{self.MAGENTA}{self.BOLD}[DEBUG FINDING]{self.RESET}")
         pprint.pprint(finding, indent=4)
+
+    @staticmethod
+    def _derive_risk_level(severity_stats: Dict[str, int]) -> str:
+        if severity_stats.get("CRITICAL", 0) > 0:
+            return "CRITICAL"
+        if severity_stats.get("HIGH", 0) > 0:
+            return "HIGH"
+        if severity_stats.get("MEDIUM", 0) > 0:
+            return "MEDIUM"
+        if severity_stats.get("LOW", 0) > 0:
+            return "LOW"
+        return "CLEAN"
 
 
 # =============================================================

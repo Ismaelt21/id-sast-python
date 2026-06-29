@@ -70,6 +70,7 @@ class JSONReport:
         generated_rules = generated_rules or []
         matched_rules   = matched_rules   or []
         enriched_findings = self._enrich_findings(findings)
+        statistics = self._build_statistics(enriched_findings)
 
         project_root = ""
         if scanned_files:
@@ -101,11 +102,20 @@ class JSONReport:
                 "scanned_files": scanned_files,
                 "total_files":   len(scanned_files),
             },
-            "statistics": self._build_statistics(enriched_findings),
-            "findings":         enriched_findings,
-            "ai_analysis":      ai_analysis,
-            "generated_rules":  generated_rules,
-            "matched_rules":    matched_rules,
+            "summary": self._build_summary(
+                project_name=project_name,
+                scanned_files=scanned_files,
+                statistics=statistics,
+                findings=enriched_findings,
+                ai_analysis=ai_analysis,
+                generated_rules=generated_rules,
+                matched_rules=matched_rules,
+            ),
+            "statistics": statistics,
+            "findings":    enriched_findings,
+            "ai_analysis": ai_analysis,
+            "generated_rules": generated_rules,
+            "matched_rules": matched_rules,
             "graphs": {
                 "ast": self._graph_summary(ast_data),
                 "cfg": self._graph_summary(cfg_data),
@@ -285,6 +295,37 @@ class JSONReport:
             "edges":     len(graph_data.get("edges", [])),
         }
 
+    def _build_summary(
+        self,
+        project_name: str,
+        scanned_files: List[str],
+        statistics: Dict[str, Any],
+        findings: List[Dict],
+        ai_analysis: List[Dict],
+        generated_rules: List[Dict],
+        matched_rules: List[Dict],
+    ) -> Dict[str, Any]:
+        """
+        Executive summary oriented to human readers and JSON consumers.
+        """
+
+        severity = statistics.get("severity", {}) or {}
+        total_findings = int(statistics.get("total_findings", len(findings)) or len(findings))
+
+        return {
+            "project": project_name,
+            "files_scanned": len(scanned_files),
+            "total_findings": total_findings,
+            "risk_level": self._derive_risk_level(severity),
+            "severity": severity,
+            "false_positives_removed": 0,
+            "ai_analysis_count": len(ai_analysis),
+            "generated_rules_count": len(generated_rules),
+            "matched_rules_count": len(matched_rules),
+            "top_vulnerabilities": self._top_counts(statistics.get("vulnerabilities", {})),
+            "top_files": self._top_files(findings),
+        }
+
     # =========================================================
     # FINDING ENRICHMENT
     # =========================================================
@@ -364,6 +405,38 @@ class JSONReport:
             )
 
         return context
+
+    @staticmethod
+    def _derive_risk_level(severity: Dict[str, Any]) -> str:
+        if int(severity.get("CRITICAL", 0) or 0) > 0:
+            return "CRITICAL"
+        if int(severity.get("HIGH", 0) or 0) > 0:
+            return "HIGH"
+        if int(severity.get("MEDIUM", 0) or 0) > 0:
+            return "MEDIUM"
+        if int(severity.get("LOW", 0) or 0) > 0:
+            return "LOW"
+        return "CLEAN"
+
+    @staticmethod
+    def _top_counts(values: Dict[str, int], limit: int = 5) -> List[Dict[str, Any]]:
+        items = sorted(values.items(), key=lambda item: (-int(item[1]), item[0]))
+        return [
+            {"name": name, "count": int(count)}
+            for name, count in items[:limit]
+        ]
+
+    @staticmethod
+    def _top_files(findings: List[Dict], limit: int = 5) -> List[Dict[str, Any]]:
+        counts: Dict[str, int] = {}
+        for finding in findings:
+            file_name = Path(str(finding.get("file", "unknown"))).name
+            counts[file_name] = counts.get(file_name, 0) + 1
+        items = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        return [
+            {"name": name, "count": int(count)}
+            for name, count in items[:limit]
+        ]
 
     # =========================================================
     # EXPORT AI DATASET
